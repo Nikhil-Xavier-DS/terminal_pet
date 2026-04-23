@@ -80,11 +80,13 @@ python main.py
 
 🧠 How It Works
 1. State Loop
+
 Every tick:
 * hunger increases
 * energy decreases
 * bond changes over time
 2. LLM Decision
+
 The model receives:
 * current state
 * emotional memory
@@ -96,10 +98,12 @@ It returns:
   "emotion": "needy"
 }
 3. Validation Layer
+
 Ensures:
 * pet cannot do impossible actions
 * survival rules are enforced
 4. Memory System
+
 Stores:
 * emotional history
 * interaction events
