@@ -1,5 +1,3 @@
----
-
 # 🐾 Terminal Pet (Local LLM Companion)
 
 A **living, autonomous terminal pet** powered by a local LLM (via Ollama), persistent memory, and an evolving emotional system.
