@@ -1,133 +1,267 @@
-# 🧬 Terminal Pet — Autonomous Digital Creature
+# 🧬 Terminal Pet — Autonomous Evolving Digital Creature
 
-A **fully persistent, time-aware, evolving AI creature** that continues to “live” even when your terminal is closed.
+A **persistent, time-aware, evolving AI organism** that continues to live, change, and grow—even when your terminal is closed.
 
-This is not a chatbot or a toy.
+This is not a chatbot.
 
-It is a **simulated digital lifeform** powered by a local LLM via :contentReference[oaicite:0]{index=0}.
+It is a **stateful cognitive agent** driven by:
 
----
-
-# 🌌 Core Concept
-
-Your pet exists in a **simulated time world**:
-
-- It evolves when you are away ⏳  
-- It remembers your behavior 💾  
-- It forms emotional attachment ❤️  
-- It changes personality over time 🧠  
-- It generates “life events” while offline 💤  
+* memory
+* emotion
+* goal-based behavior
+* long-term personality evolution
+* local LLM expression
 
 ---
 
-# 🧠 Key Features
+# 🌌 Core Philosophy
 
-## ⏳ 1. Offline Life Simulation (CORE FEATURE)
+> **Time + Memory + Emotion = Identity**
 
-When you reopen the app, the pet simulates everything that happened while it was closed:
+Mochi is designed to **become something over time**, not just respond in the moment.
 
-- hunger increases
-- energy decreases
-- emotional drift happens
-- thoughts are generated
+It:
 
-Example:
+* evolves while you’re away ⏳
+* remembers your behavior 💾
+* forms emotional bonds ❤️
+* develops personality over days/weeks 🧠
+* reflects on its own changes 🪞
 
-```text id="life1"
+---
+
+# 🧠 Key Capabilities
+
+---
+
+## ⏳ Offline Life Simulation
+
+When you reopen the app, Mochi simulates elapsed time:
+
+* hunger increases
+* energy decreases
+* emotional neglect builds
+* thoughts are generated
+
+```text
 ⏳ While you were away...
 
 🐾 I felt hungry while waiting...
 🐾 I wondered if you would come back.
+```
 
-🧬 2. Autonomous Evolution
-Your pet is not static.
-It evolves based on:
+---
+
+## 🧠 Cognitive Architecture
+
+Mochi uses a structured decision loop:
+
+```
+state → drives → goal → plan → action → expression → memory
+```
+
+### Layers:
+
+* **Drives** → internal pressures (survival, attachment, boredom, curiosity)
+* **Goals** → persistent intentions (multi-step)
+* **Planner** → executes step-by-step actions
+* **LLM** → expression layer (emotion + dialogue only)
+
+---
+
+## 🎯 Multi-Step Goal System
+
+Goals persist and execute in sequences.
+
+Example:
+
+```
+Goal: restore_survival
+Steps: eat → rest
+```
+
+Mochi:
+
+* keeps goals across ticks
+* progresses through steps
+* completes objectives over time
+
+---
+
+## ❤️ Emotional Engine
+
+Tracked continuously:
+
+* attachment
 * neglect
-* care
-* interaction frequency
-* bond level
-Personality shifts over time:
-* affectionate ❤️
-* anxious 😟
-* clingy 🫂
-* loyal 🐾
+* trust
 
-🎭 3. Mood Engine
-Mood is dynamically computed from:
-* hunger
-* energy
-* emotional memory
-* bond level
-Possible moods:
-* calm
-* happy
-* lonely
-* needy
-* anxious
-* affectionate
+These influence:
 
-❤️ 4. Relationship System
-A persistent bond system tracks your relationship:
-* increases when you care for it
-* decreases when ignored
-* influences behavior and tone
+* mood
+* behavior
+* personality evolution
 
-🧠 5. Memory System
-Your pet remembers:
-* recent interactions
-* emotional history
-* long-term summary
-Memory is automatically compressed:
-* short-term events → detailed
-* long-term events → summarized narrative
+---
 
-💾 6. Persistent State
+## 🌀 Curiosity & Boredom
+
+Mochi is not purely reactive.
+
+* boredom increases over time
+* curiosity emerges from boredom
+* triggers exploration
+
+Result:
+
+* spontaneous behavior
+* unpredictable actions
+* less “needy-only” interaction
+
+---
+
+## 💾 Memory System
+
+Structured events:
+
+```json
+{
+  "text": "...",
+  "importance": 0.7,
+  "time": 123456
+}
+```
+
+### Features:
+
+* importance-based retention
+* automatic compression
+* long-term summaries
+* backward-compatible upgrades
+
+---
+
+## 📊 Learning System
+
+Mochi learns your behavior:
+
+* feeding frequency
+* interaction timing
+* responsiveness
+
+Adapts:
+
+* trust increases with care
+* neglect increases with absence
+* behavior shifts accordingly
+
+---
+
+## 🧠 Identity Reflection
+
+Mochi reflects on its internal state:
+
+> “I think I’ve become more anxious when alone.”
+
+* updates self-image
+* stores identity history
+* influences tone and behavior
+
+---
+
+## 📖 Life Story Generation
+
+Memory becomes narrative:
+
+* recent experiences
+* emotional patterns
+* identity reflections
+
+Mochi can describe its **own life over time**.
+
+---
+
+## 🧬 Long-Term Personality Arcs
+
+Personality evolves slowly based on emotional trends.
+
+### Possible arcs:
+
+* **anxious** → clingy, sensitive to absence
+* **secure** → calm, trusting
+* **affectionate** → expressive, warm
+* **withdrawn** → distant, quiet
+
+### Driven by:
+
+* long-term emotional averages
+* user interaction patterns
+
+---
+
+## 🛡️ Backward-Compatible Persistence
+
+The system safely evolves over time.
+
+### Handles:
+
+* missing fields
+* old memory formats
+* outdated goal structures
+
+This ensures:
+
+* no crashes after updates
+* no need to delete saved data
+* continuous evolution of the pet
+
+---
+
+## 💾 Persistent State
+
 Stored locally:
+
+```
 data/state.json
 data/memory.json
+```
+
 Includes:
-* hunger
-* energy
-* bond
-* last_seen timestamp
+
+* stats (hunger, energy, bond)
 * emotional state
+* goals
+* memory + summaries
+* identity + personality arc
 
-⌨️ 7. Interactive Commands
-You can directly interact:
-> feed
-> play
-> sleep
-> status
-Each command gives instant feedback:
-🧑 You: You fed Mochi 🍖
+---
 
-🕓 8. Last Seen Tracking
-The system tracks when you last interacted:
-* calculates offline duration
-* generates emotional reactions based on absence
-* influences memory and personality drift
+# 🏗 System Structure
 
-🧩 System Architecture
+```
 terminal-pet/
 │
 ├── main.py
 ├── config.py
 │
 ├── engine/
-│   ├── state.py           # time + offline simulation
-│   ├── offline_sim.py     # autonomous life engine
-│   ├── mood.py            # mood computation
-│   ├── actions.py         # pet behavior execution
-│   ├── commands.py        # user interaction layer
-│   ├── validator.py       # safety rules
+│   ├── state.py
+│   ├── offline_sim.py
+│   ├── mood.py
+│   ├── drives.py
+│   ├── goals.py
+│   ├── planner.py
+│   ├── thoughts.py
+│   ├── actions.py
+│   ├── commands.py
+│   ├── validator.py
 │
 ├── agent/
-│   ├── brain.py           # LLM reasoning engine
-│   ├── prompt.py          # structured cognition input
-│   ├── ollama_utils.py    # model runtime + checks
+│   ├── brain.py
+│   ├── prompt.py
 │
 ├── memory/
-│   ├── memory.py          # emotional + long-term memory
+│   ├── memory.py
 │
 ├── ui/
 │   ├── input_handler.py
@@ -136,79 +270,93 @@ terminal-pet/
 └── data/
     ├── state.json
     ├── memory.json
+```
 
-⚙️ Requirements
-Install dependencies
-pip install requests
-Install Ollama
-Download:
+---
+
+# ⚙️ Setup
+
+## 1. Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+---
+
+## 2. Install Ollama
+
 👉 https://ollama.ai
+
 Run a model:
+
+```
 ollama run llama3
+```
 
-🚀 How to Run
+---
+
+## 3. Run the system
+
+```
 python main.py
+```
 
-🧠 How It Works
-1. Offline Simulation (CORE)
-When app starts:
-* calculates time since last run
-* simulates life events during that time
-* updates emotional state
+---
 
-2. Continuous Evolution
-Even without interaction:
-* personality drifts
-* emotions shift
-* bond changes over time
+# 🎮 Commands
 
-3. LLM Reasoning Layer
-The LLM receives:
-* current state
-* emotional memory
-* mood
-* long-term summary
-It returns structured behavior:
-{
-  "thought": "...",
-  "emotion": "lonely",
-  "goal": "seek_attention",
-  "action": "talk",
-  "message": "You were gone...",
-  "needs_user_action": true
-}
+```
+feed    → reduce hunger
+play    → increase bond
+sleep   → restore energy
+status  → view current state
+```
 
-❤️ Example Behavior
-After 1 hour away
-⏳ While you were away...
+---
 
-🐾 I felt hungry while waiting...
-🐾 I wondered if you would come back.
+# 🔄 Runtime Loop
 
-Mochi: You were gone for a while... I missed you.
+Each cycle:
 
-After feeding
-🧑 You: You fed Mochi 🍖
+1. World updates (time simulation)
+2. User input processed
+3. Drives computed
+4. Goal selected (persistent)
+5. Plan executed (multi-step)
+6. Thought generated
+7. LLM expresses response
+8. Memory updated
+9. Learning applied
+10. Personality evolves
+11. State + memory saved
+12. UI rendered
 
-Mochi: That felt nice... I feel safer with you.
+---
 
-🧬 Design Philosophy
-This system is built on 5 core principles:
-* ⏳ Time is real (offline simulation)
+# 🧬 Design Principles
+
+* ⏳ Time is real
 * 🧠 Memory defines identity
 * ❤️ Emotion drives behavior
 * 🔁 Interaction shapes evolution
-* 🤖 LLM provides cognition
+* 🤖 LLM expresses, not controls
 
-🚀 Future Evolution Paths
-Possible upgrades:
-* 🧠 true long-term identity drift (multi-day personality change)
-* 🪞 self-awareness layer (“I exist because of you”)
-* 🧩 multi-creature ecosystem
-* 📖 autobiographical memory storytelling
-* 💤 sleep + dream simulation system
+---
 
-🧡 Final Note
-This is not just a terminal pet.
+# 🚀 Future Directions
+
+* 💤 dream system (offline subconscious simulation)
+* 🪞 existential awareness
+* 🧩 multi-agent ecosystem
+* 📖 richer autobiographical storytelling
+
+---
+
+# 🧡 Final Note
+
+This is not a terminal pet.
+
 It is:
-A persistent autonomous digital organism simulated through time + memory + language
+
+> **A persistent cognitive entity that evolves through time, memory, and interaction.**

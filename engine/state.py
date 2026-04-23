@@ -13,7 +13,8 @@ def init_state():
         "bond": 3,
         "mood": "neutral",
         "last_seen": 0,
-        "offline_log": []
+        "offline_log": [],
+        "goal": None 
     }
 
 def apply_offline_progress(state):

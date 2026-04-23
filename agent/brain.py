@@ -16,31 +16,38 @@ def extract_json(text):
 
 def fallback():
     return {
-        "thought": "system fallback",
-        "emotion": "confused",
-        "goal": "do_nothing",
-        "action": "do_nothing",
+        "emotion": "neutral",
         "message": "...",
+        "mood": "calm",
         "needs_user_action": False
     }
 
 
-def decide(prompt):
+def call_llm(prompt):
+    res = requests.post(OLLAMA_URL, json={
+        "model": MODEL,
+        "prompt": prompt,
+        "stream": False
+    })
+
+    text = res.json()["response"]
+    return extract_json(text)
+
+
+def decide(prompt, action, goal, thought):
     try:
-        res = requests.post(OLLAMA_URL, json={
-            "model": MODEL,
-            "prompt": prompt,
-            "stream": False
-        })
+        data = call_llm(prompt)
 
-        text = res.json()["response"]
-        data = extract_json(text)
-
-        if isinstance(data, dict):
-            return data
-
-        return fallback()
+        if not isinstance(data, dict):
+            data = fallback()
 
     except Exception as e:
         print("LLM error:", e)
-        return fallback()
+        data = fallback()
+
+    # 🔥 inject real cognition
+    data["action"] = action
+    data["goal"] = goal["type"]
+    data["thought"] = thought
+
+    return data
