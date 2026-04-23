@@ -21,8 +21,8 @@ def clamp(state, limits):
 
 def load_state():
     os.makedirs("data", exist_ok=True)
-
-    if os.path.exists(STATE_FILE):
+    
+    if os.path.exists(STATE_FILE) and os.stat(STATE_FILE).st_size != 0:
         with open(STATE_FILE, "r") as f:
             return json.load(f)
 

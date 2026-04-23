@@ -5,7 +5,7 @@ MEMORY_FILE = "data/memory.json"
 def init_memory():
     os.makedirs("data", exist_ok=True)
 
-    if os.path.exists(MEMORY_FILE):
+    if os.path.exists(MEMORY_FILE) and os.stat(MEMORY_FILE).st_size != 0:
         with open(MEMORY_FILE, "r") as f:
             return json.load(f)
 

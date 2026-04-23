@@ -1,4 +1,4 @@
-MODEL = "llama3"
+MODEL = "llama3.2:1b"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
 TICK_RATE = 2
