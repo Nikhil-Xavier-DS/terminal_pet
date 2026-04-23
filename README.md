@@ -65,7 +65,7 @@ terminal-pet/
 └── data/
     ├── memory.json
     ├── state.json
-
+```
 ⚙️ Requirements
 1. Install Python deps
 pip install requests
