@@ -7,7 +7,13 @@ ACTIONS = {
 }
 
 def apply_action(state, action):
+    # safety: ensure string
+    if not isinstance(action, str):
+        action = "do_nothing"
+
     effects = ACTIONS.get(action, {})
+
     for k, v in effects.items():
         state[k] = state.get(k, 0) + v
+
     return state

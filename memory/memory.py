@@ -25,14 +25,31 @@ def save_memory(memory):
 def update_memory(memory, decision, user_action=None):
     memory["events"].append(decision.get("message", ""))
 
-    if len(memory["events"]) > 50:
-        memory["events"] = memory["events"][-50:]
+    if user_action == "fed":
+        memory["emotions"]["trust"] += 0.3
+        memory["emotions"]["attachment"] += 0.2
+
+    if user_action == "played":
+        memory["emotions"]["attachment"] += 0.4
+
+    if user_action == "too_tired":
+        memory["emotions"]["neglect"] += 0.1
 
     if decision["action"] == "seek_attention":
         memory["emotions"]["attachment"] += 0.2
 
-    if user_action == "ignore":
-        memory["emotions"]["neglect"] += 0.3
-        memory["emotions"]["attachment"] -= 0.1
+    return memory
+
+def apply_absence_effect(memory, offline_time):
+    if offline_time <= 0:
+        return memory
+
+    if offline_time > 300:  # 5 min
+        memory["emotions"]["neglect"] += 0.5
+        memory["emotions"]["attachment"] -= 0.2
+
+    if offline_time > 3600:  # 1 hour
+        memory["emotions"]["neglect"] += 1.0
+        memory["emotions"]["trust"] -= 0.3
 
     return memory

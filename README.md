@@ -1,192 +1,140 @@
-# 🐾 Terminal Pet (Local LLM Companion)
+# 🐾 Terminal Pet (Living Local LLM Agent)
 
-A **living, autonomous terminal pet** powered by a local LLM (via Ollama), persistent memory, and an evolving emotional system.
+A **persistent, time-aware virtual pet** that lives in your terminal.
 
-Your pet isn’t just a chatbot—it’s a small simulation that thinks, reacts, remembers, and slowly develops a relationship with you over time.
+It:
+- remembers you across restarts 💾  
+- reacts when you’ve been away ⏳  
+- evolves emotionally ❤️  
+- responds to your commands ⌨️  
+- acts autonomously using a local LLM 🤖  
 
-It runs **fully offline**, lives in your terminal, and doesn’t forget you.
-
----
-
-## ✨ Features
-
-### 🤖 Local AI Brain
-
-Powered by a local model through Ollama.
-No cloud APIs. No tracking. Fully offline intelligence.
+Powered by a local model via Ollama.
 
 ---
 
-### ❤️ Emotional System
+# 🌟 Key Features
 
-Your pet has internal emotional state that evolves over time:
+## 🧠 1. Local AI Brain
+Uses a local LLM (via Ollama) for personality-driven responses.
 
-* attachment ❤️
-* trust 🤝
-* neglect 😔
+## ❤️ 2. Emotional System
+Tracks:
+- attachment
+- neglect
+- trust
 
-These directly influence behavior, tone, and decisions.
+These evolve over time and usage.
 
 ---
 
-### 💾 Persistent Memory
+## ⏳ 3. Offline Simulation (NEW)
+Your pet continues to “live” while the program is closed:
 
+- hunger increases over time
+- energy decreases over time
+- emotional changes based on absence
+
+When you return:
+
+> “You were gone for a while… I missed you.”
+
+---
+
+## 🕓 4. Last Seen Tracking (NEW)
+
+Stores the last time you interacted:
+
+```json
+"last_seen": 1713870000
+Used to calculate absence duration.
+
+⌨️ 5. Interactive Commands
+You can directly interact:
+> feed
+> play
+> sleep
+> status
+Each command gives instant feedback:
+* 🧑 You: You fed Mochi 🍖
+* 🧑 You: Mochi went to sleep 💤
+
+💾 6. Persistent Memory
 Your pet remembers everything:
-
-* past interactions
+* state (hunger, energy, bond)
 * emotional history
-* relationship changes
+* past interactions
+Stored in:
+data/state.json
+data/memory.json
 
-Even after restarts:
-
-> “Oh… you’re back.”
-
----
-
-### 🔁 Autonomous Simulation
-
-The pet lives on its own timeline:
-
-* hunger increases
-* energy decreases
-* attention needs grow
-* emotional drift over time
-
-It exists even when you’re not interacting.
-
----
-
-### 🛡 Safe Decision Layer
-
-All LLM outputs are validated before execution:
-
-* prevents impossible actions
-* enforces system rules
-* keeps simulation consistent
-
----
-
-## 🗂 Project Structure
-
-```text
+🗂 Project Structure
 terminal-pet/
 │
 ├── main.py
 ├── config.py
 │
 ├── engine/
-│   ├── state.py
-│   ├── actions.py
-│   ├── validator.py
+│   ├── state.py        # simulation + offline logic
+│   ├── actions.py      # pet actions
+│   ├── validator.py    # safety rules
+│   ├── commands.py     # user commands
 │
 ├── agent/
-│   ├── brain.py
-│   ├── prompt.py
+│   ├── brain.py        # LLM decision engine
+│   ├── prompt.py       # context builder
+│   ├── ollama_utils.py # model + runtime checks
 │
 ├── memory/
-│   ├── memory.py
+│   ├── memory.py       # emotional memory system
 │
 ├── ui/
+│   ├── input_handler.py
 │   ├── render.py
 │
 └── data/
-    ├── memory.json
     ├── state.json
-```
+    ├── memory.json
 
----
-
-## ⚙️ Installation
-
-### 1. Install Python dependencies
-
-```bash
+⚙️ Requirements
+Install Python dependency
 pip install requests
-```
-
----
-
-### 2. Install Ollama
-
-Download and install Ollama:
-👉 [https://ollama.ai](https://ollama.ai)
-
-Then pull a model:
-
-```bash
+Install Ollama
+Download and install:
+👉 https://ollama.ai
+Run a model:
 ollama run llama3
-```
 
----
-
-## 🚀 Running the Pet
-
-```bash
+🚀 How to Run
 python main.py
-```
 
----
-
-## 🧠 How It Works
-
-### 1. Simulation Loop
-
-Each tick updates internal state:
-
-* hunger ⬆️
-* energy ⬇️
-* emotional drift
-* bond changes over time
-
----
-
-### 2. LLM Decision Making
-
+🧠 How It Works
+1. Time Simulation
+Each tick:
+* hunger increases
+* energy decreases
+2. Offline Simulation
+When restarted:
+* time difference is calculated
+* state is updated automatically
+3. Command System
+User input is processed immediately:
+* affects state instantly
+* triggers visible feedback
+4. LLM Decision
 The model receives:
-
 * current state
 * emotional memory
 * personality profile
-
-It responds with structured intent:
-
-```json
+Returns:
 {
   "action": "play",
-  "message": "I want attention...",
-  "emotion": "needy"
+  "message": "I feel playful...",
+  "emotion": "happy"
 }
-```
 
----
-
-### 3. Validation Layer
-
-Before execution:
-
-* invalid actions are rejected
-* safety rules enforced
-* system consistency preserved
-
----
-
-### 4. Memory System
-
-All interactions are stored:
-
-* emotional events
-* behavioral history
-* relationship progression
-
-Saved automatically in `/data`.
-
----
-
-## 🧬 Personality System
-
-Defined in `config.py`:
-
-```python
+❤️ Personality System
+Defined in config.py:
 PERSONALITY = {
   "name": "Mochi",
   "archetype": "clingy chaotic companion",
@@ -196,87 +144,41 @@ PERSONALITY = {
     "affectionate when engaged"
   ]
 }
-```
 
-Your pet’s personality directly shapes how it speaks and reacts.
+🧪 Example Behavior
+After 10 minutes away:
+⏳ You were away for 10m...
 
----
+Mochi: Oh! You're back! I missed you!
+After feeding:
+> feed
 
-## 💾 Persistence Model
+🧑 You: You fed Mochi 🍖
+Mochi: mmm… that feels better
 
-Two layers of memory:
+⚠️ Notes
+* Works best with llama3 or mistral models
+* Ollama must be running in background
+* First run may download model automatically
 
-* `data/state.json` → physical + simulation state
-* `data/memory.json` → emotional + interaction history
+🧠 Design Philosophy
+This is not just a chatbot.
+It is:
+A persistent simulation agent with emotional memory + time awareness
+* LLM = personality
+* Code = world rules
+* Memory = identity
+* Time = life
 
-Everything persists across restarts.
+🚀 Future Ideas
+* 🧬 personality evolution over time
+* 🎭 mood system (sad/happy/needy/distant)
+* 💤 sleep cycles tied to real clock
+* 🐾 multiple pets interacting
+* 🔊 sound + animation layer
 
----
-
-## 🔁 Example Output
-
-```text
-🐾 Pet is alive...
-
-Hunger: 6.2
-Energy: 3.1
-Bond: 4.8
-
-Mochi: Hey… don’t ignore me too long…
-```
-
----
-
-## 🧪 Design Philosophy
-
-This is not a chatbot.
-
-It is a hybrid system:
-
-> **Simulation engine + emotional model + constrained LLM agent**
-
-* 🧠 LLM = personality + reasoning
-* ⚙️ Code = physics + rules + memory
-* 💾 Storage = continuity of identity
-
----
-
-## ⚠️ Notes
-
-* Best with fast local models (e.g. llama3, mistral)
-* Ensure Ollama is running before starting
-* First run will auto-create `/data`
-
----
-
-## 🚀 Future Ideas
-
-* multiple interacting pets 🐕🐈
-* evolving personality over time
-* offline aging system
-* ASCII animation mode
-* sound / notification reactions
-* CLI command system (`feed`, `play`, `talk`)
-* installable CLI tool (`pet` command)
-
----
-
-## 🧡 Credits
-
-Built as an experiment in:
-
-* local LLM agents (Ollama)
-* persistent simulated memory
-* emotional state systems
-* constrained AI behavior design
-
----
-
-If you want next upgrades, I can help you turn this into something seriously impressive:
-
-* 🔥 CLI tool (`pet run`, `pet feed`, etc.)
-* 📦 pip-installable package
-* 🧠 better memory architecture (event graph / embeddings)
-* 🎮 real “game-like” loop with animations
-
-Just say the direction.
+🧡 Credits
+Built using:
+* Python simulation engine
+* Ollama local LLM runtime
+* custom agent + memory architecture
