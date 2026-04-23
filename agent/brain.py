@@ -5,25 +5,23 @@ from config import MODEL, OLLAMA_URL
 
 
 def extract_json(text):
-    """
-    Extract first JSON object from LLM response.
-    """
     try:
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             return json.loads(match.group(0))
     except:
-        pass
+        return None
     return None
 
 
 def fallback():
     return {
-        "intent": "fallback",
-        "action": "do_nothing",
+        "thought": "system fallback",
         "emotion": "confused",
+        "goal": "do_nothing",
+        "action": "do_nothing",
         "message": "...",
-        "confidence": 0.0
+        "needs_user_action": False
     }
 
 
@@ -35,16 +33,14 @@ def decide(prompt):
             "stream": False
         })
 
-        text = res.json().get("response", "")
+        text = res.json()["response"]
+        data = extract_json(text)
 
-        parsed = extract_json(text)
+        if isinstance(data, dict):
+            return data
 
-        if isinstance(parsed, dict):
-            return parsed
-
-        print("⚠️ Invalid JSON from LLM. Using fallback.")
         return fallback()
 
     except Exception as e:
-        print(f"⚠️ LLM error: {e}")
+        print("LLM error:", e)
         return fallback()

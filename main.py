@@ -1,74 +1,104 @@
 import time
 
-from config import TICK_RATE, STATE_LIMITS, MODEL
-from agent.ollama_utils import ensure_model
-
+from config import STATE_LIMITS
 from engine.state import load_state, save_state, tick, clamp
-from engine.actions import apply_action
-from engine.validator import validate
+from engine.mood import compute_mood
+from engine.offline_sim import simulate_offline
 from engine.commands import handle_command
-
 from agent.prompt import build_prompt
 from agent.brain import decide
-
-from memory.memory import init_memory, update_memory, save_memory, apply_absence_effect
-from ui.render import render
+from memory.memory import (
+    update_memory,
+    evolve_personality,
+    add_offline_events,
+    compress_memory
+)
 from ui.input_handler import InputHandler
+from ui.render import render
 
-def format_time(seconds):
-    mins = int(seconds // 60)
-    hours = int(mins // 60)
 
-    if hours > 0:
-        return f"{hours}h"
-    elif mins > 0:
-        return f"{mins}m"
-    else:
-        return f"{int(seconds)}s"
-
-# ensure model exists
-ensure_model(MODEL)
-
+# ---------------------------
+# LOAD STATE + MEMORY
+# ---------------------------
 state, offline_time = load_state()
-memory = init_memory()
-memory = apply_absence_effect(memory, offline_time)
 
+memory = {
+    "emotions": {
+        "attachment": 2,
+        "neglect": 0,
+        "trust": 5
+    },
+    "events": [],
+    "summary": ""
+}
+
+
+# ---------------------------
+# OFFLINE SIMULATION (CORE FEATURE)
+# ---------------------------
+state, memory, offline_events = simulate_offline(
+    state,
+    memory,
+    compute_mood
+)
+
+memory = add_offline_events(memory, offline_events)
+
+if offline_events:
+    print("\n⏳ While you were away...")
+    for e in offline_events[:3]:
+        print("🐾", e)
+
+
+# ---------------------------
+# INPUT SYSTEM
+# ---------------------------
 input_handler = InputHandler(state)
 input_handler.start()
 
-print("🐾 Pet is alive...")
 
-if offline_time > 10:
-    print(f"\n⏳ You were away for {format_time(offline_time)}...")
-
-    if offline_time > 3600:
-        print("Mochi: You were gone for so long… I got lonely… 😢")
-    elif offline_time > 300:
-        print("Mochi: Oh! You're back! I missed you!")
+# ---------------------------
+# MAIN LOOP
+# ---------------------------
+TICK_RATE = 2
 
 while True:
-    # 1. tick world
+
+    # 1. world tick (basic simulation)
     state = tick(state)
-    state = clamp(state, STATE_LIMITS)
 
-    # 2. check user input
+    # 2. user command (if any)
     user_action = input_handler.get_last_action()
+    state, user_feedback = handle_command(user_action, state)
 
-    # 3. agent decision
-    prompt = build_prompt(state, memory)
+    # 3. mood computation
+    mood = compute_mood(state, memory)
+    state["mood"] = mood
+
+    # 4. LLM decision
+    prompt = build_prompt(state, memory, mood)
     decision = decide(prompt)
 
-    decision = validate(decision, state)
-
-    # 4. apply agent action
+    # 5. apply LLM action (via actions module)
+    # (assuming your actions.py handles mapping)
+    # If you already have apply_action, use it here:
+    from engine.actions import apply_action
     state = apply_action(state, decision["action"])
 
-    # 5. memory update
+    # 6. memory updates
     memory = update_memory(memory, decision, user_action)
-    save_memory(memory)
+    memory = evolve_personality(state, memory)
+
+    # 7. compression (IMPORTANT)
+    memory = compress_memory(memory)
+
+    # 8. safety clamp
+    state = clamp(state, STATE_LIMITS)
+
+    # 9. persist everything
     save_state(state)
 
-    # 6. render
-    render(state, decision)
+    # 10. render UI
+    render(state, decision, user_feedback)
 
     time.sleep(TICK_RATE)

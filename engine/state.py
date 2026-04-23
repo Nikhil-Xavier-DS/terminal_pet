@@ -6,15 +6,15 @@ STATE_FILE = "data/state.json"
 HUNGER_RATE = 0.0005     # increase per second
 ENERGY_DECAY = 0.0004    # decrease per second
 
-
 def init_state():
     return {
         "hunger": 5,
         "energy": 7,
         "bond": 3,
-        "last_seen": time.time()
+        "mood": "neutral",
+        "last_seen": 0,
+        "offline_log": []
     }
-
 
 def apply_offline_progress(state):
     now = time.time()

@@ -12,9 +12,13 @@ def validate(decision, state):
     if action == "play" and state["energy"] < 2:
         action = "sleep"
 
+    # sanitize message
+    message = decision.get("message")
+    if not isinstance(message, str) or not message.strip():
+        decision["message"] = "..."
+
     decision["action"] = action
     return decision
-
 
 
 def normalize_decision(decision):
