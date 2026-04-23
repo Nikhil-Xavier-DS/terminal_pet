@@ -1,0 +1,19 @@
+# Virtual environment
+terminal_bot/
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables
+.env
+
+# Editor / OS
+.vscode/
+.DS_Store
+
+# Local models / embeddings
+data/
