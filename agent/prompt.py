@@ -34,4 +34,4 @@ OUTPUT JSON:
   "message": "...",
   "confidence": 0-1,
   "internal_thought": "hidden"
-}}
+}}"""
