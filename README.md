@@ -1,5 +1,3 @@
-Here’s a cleaner, more polished, and more “product-ready” version of your README. I kept your tone and idea, but made it feel like a real open-source project people would actually want to star ⭐
-
 ---
 
 # 🐾 Terminal Pet (Local LLM Companion)
