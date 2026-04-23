@@ -302,19 +302,22 @@ def evolve_personality(state, memory):
 
 
 def generate_life_story(memory):
-    events = memory["events"][-20:]
-    identity = memory.get("identity", {})
+    events = memory.get("events", [])
 
     story = []
 
     for e in events:
-        story.append(e["text"])
+        # handle dict format
+        if isinstance(e, dict):
+            text = e.get("text", "")
+        # handle string format
+        elif isinstance(e, str):
+            text = e
+        else:
+            continue
 
-    if identity.get("history"):
-        story.append("I have changed over time.")
-
-        for h in identity["history"][-3:]:
-            story.append(h["text"])
+        if text:
+            story.append(str(text))
 
     return " ".join(story)
 
@@ -386,27 +389,28 @@ def update_personality_arc(memory):
 
 
 def summarize_memory_llm(memory):
-    events = memory["events"][-30:]
+    events = memory.get("events", [])
 
-    text = "\n".join(e["text"] for e in events if e["text"])
+    cleaned_texts = []
 
-    prompt = f"""
-Summarize this creature's life emotionally:
+    for e in events:
+        # dict format
+        if isinstance(e, dict):
+            text = e.get("text", "")
+        # string format
+        elif isinstance(e, str):
+            text = e
+        else:
+            continue
 
-{text}
+        if text:
+            cleaned_texts.append(str(text))
 
-Output a short narrative summary.
-"""
+    text = "\n".join(cleaned_texts)
 
-    try:
-        from agent.brain import decide
+    # optional: prevent empty summaries
+    if not text.strip():
+        return memory
 
-        summary = decide(prompt)
-
-        if isinstance(summary, dict):
-            memory["summary"] = summary.get("message", "")
-
-    except:
-        pass
-
+    memory["summary"] = text
     return memory

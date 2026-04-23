@@ -1,16 +1,16 @@
 # 🧬 Terminal Pet — Autonomous Evolving Digital Creature
 
-A persistent, time-aware, emotionally evolving AI agent that simulates a living digital organism inside your terminal.
+A persistent, time-aware, emotionally evolving AI agent that lives inside your terminal.
 
 It is not a chatbot.
 
-It is a **multi-layer cognitive system** built around:
+It is a **simulated digital organism** powered by:
 
-* memory
-* emotion
-* goals
-* reasoning
-* long-term identity evolution
+* local LLM (Ollama)
+* memory system
+* emotional engine
+* goal reasoning layer
+* time-based simulation
 
 ---
 
@@ -18,18 +18,19 @@ It is a **multi-layer cognitive system** built around:
 
 > **Time + Memory + Emotion + Reasoning = Identity**
 
-Mochi evolves continuously:
+Mochi evolves continuously through:
 
-* while running ⏳
-* while offline 💾
-* across days and weeks 🧠
+* interaction ⌨️
+* offline time ⏳
+* memory accumulation 🧠
+* emotional drift ❤️
 
 It develops:
 
+* personality arcs
 * emotional continuity
 * behavioral habits
-* personality arcs
-* self-consistency over time
+* long-term identity changes
 
 ---
 
@@ -37,69 +38,69 @@ It develops:
 
 ---
 
-## 🧠 Multi-Layer Cognitive Architecture
+## 🧠 Cognitive Architecture
 
-Mochi does NOT rely on a single decision system.
+Terminal Pet uses a layered reasoning system:
 
-Instead it uses layered cognition:
-
-```text id="c9k2lm"
-State → Drives → Rule-Based Goals → LLM Goals → Resolver → Plan → Action → Memory
+```text id="arch1"
+State → Drives → Rule Goals → LLM Goals → Goal Resolver → Planner → Action → Memory → UI
 ```
 
 ---
 
-## ⚖️ Hybrid Goal System (NEW)
+## ⚖️ Hybrid Decision System
 
-Mochi now uses **two parallel goal systems**:
+Mochi’s behavior is driven by two parallel systems:
 
-### 1. Rule-Based Goals (Safety Layer)
+### 1. Rule-Based System (Survival Layer)
 
-* hunger / energy constraints
-* stability guarantees
-* deterministic fallback behavior
+* hunger control
+* energy management
+* safety overrides
 
-### 2. LLM-Based Goals (Intuition Layer)
+### 2. LLM Reasoning System (Intuition Layer)
 
-* emotional reasoning
-* context awareness
+* emotional interpretation
+* contextual reasoning
 * personality-driven decisions
 
 ### 3. Goal Resolver (Executive Layer)
 
-Combines both:
-
-* prioritizes survival rules
-* respects LLM confidence
-* ensures stable output
+Combines both systems into a single stable goal.
 
 ---
 
-## 🎯 Goal Resolution Logic
+# 🎯 Goal System
 
-```python id="p1z8ka"
-goal = resolve_goal(llm_goal, rule_goal, state)
-```
+Goals are dynamically generated and resolved:
 
-### Priority order:
+* eat
+* sleep
+* play
+* seek_attention
+* explore
+* rest
 
-1. Critical survival rules (eat/sleep)
-2. High-confidence LLM intent
-3. Rule-based fallback
-4. Rest state
+The resolver ensures:
+
+* survival always prioritized
+* LLM confidence is respected
+* system stability is preserved
 
 ---
 
-## ⏳ Offline Life Simulation
+# ⏳ Offline Life Simulation
 
-When restarted, Mochi simulates time passage:
+When reopened, Mochi simulates life while you were away:
 
 * hunger increases
-* energy decays
+* energy decreases
 * emotional drift occurs
 * thoughts are generated
 
-```text id="s2xq91"
+Example:
+
+```text id="offline1"
 ⏳ While you were away...
 
 🐾 I felt hungry while waiting...
@@ -108,170 +109,127 @@ When restarted, Mochi simulates time passage:
 
 ---
 
-## 🧠 Drives System
+# 🧠 Memory System
 
-Internal pressures influencing behavior:
+Mochi maintains structured memory:
 
-* survival (hunger/energy)
-* attachment
-* trust
-* boredom
-* curiosity
-
-These evolve continuously over time.
-
----
-
-## 🎯 Multi-Step Goal Execution
-
-Goals are no longer single actions.
-
-Example:
-
-```text id="q8z1pm"
-restore_survival → eat → rest
-```
-
-Mochi:
-
-* persists goals across ticks
-* executes step-by-step plans
-* tracks progress over time
-
----
-
-## ❤️ Emotional System
-
-Tracked continuously:
-
-* attachment
-* neglect
-* trust
-
-These influence:
-
-* decision making
-* personality arc shifts
-* LLM tone and behavior
-
----
-
-## 🌀 Boredom & Curiosity
-
-Mochi now has internal drive tension:
-
-* boredom increases during inactivity
-* curiosity emerges from boredom
-* triggers spontaneous exploration
-
-Result:
-
-* self-initiated behavior
-* less predictable interactions
-* emergent personality quirks
-
----
-
-## 🧠 Memory System
-
-Structured persistent memory:
-
-```json id="m9q2kx"
+```json id="mem1"
 {
-  "text": "...",
+  "text": "I was fed today",
   "importance": 0.7,
   "time": 123456
 }
 ```
 
-### Features:
+Features:
 
-* importance-based filtering
-* automatic compression
+* event tracking
+* importance scoring
+* compression system
 * long-term summaries
-* schema migration support
+* personality influence
 
 ---
 
-## 🧬 Identity Reflection
+# 🧬 Personality System
 
-Mochi can reflect on itself:
+Mochi evolves over time based on:
 
-> “I think I’ve become more anxious when alone.”
+* neglect
+* care
+* interaction frequency
+* bond level
 
-It:
+Possible arcs:
 
-* updates self-image
-* stores identity history
-* influences future decisions
-
----
-
-## 📖 Life Story Generation
-
-Memory becomes narrative:
-
-* emotional trends
-* interaction history
-* identity evolution
-
-Mochi can describe its own “life story”.
+* affectionate ❤️
+* anxious 😟
+* loyal 🐾
+* detached 🧊
 
 ---
 
-## 🧬 Long-Term Personality Arcs
+# 📖 Life Story System
 
-Personality evolves over days/weeks.
+Mochi can generate narrative memory:
 
-### Possible arcs:
-
-* anxious → sensitive, clingy
-* secure → stable, calm
-* affectionate → warm, expressive
-* withdrawn → distant, quiet
-
-### Driven by:
-
-* long-term emotional averages
-* interaction patterns
-* unresolved tension over time
+* compresses past events
+* builds identity timeline
+* expresses lived experience
 
 ---
 
-## ⚖️ Stability & Safety Design
+# 🎞️ TERMINAL ANIMATION SYSTEM (NEW)
 
-To prevent instability:
-
-* rule-based overrides for survival
-* confidence threshold for LLM decisions
-* fallback to safe goals
-* resolver prevents contradictions
+Mochi is now a **visually expressive ASCII creature**.
 
 ---
 
-## 💾 Persistent State
+## 🐾 Big ASCII Creature
 
-Stored locally:
+Mochi is rendered as a full-body animated entity:
 
-```text id="d2m9qa"
-data/state.json
-data/memory.json
+```text id="anim1"
+     (\_/)
+   ( •ᴗ• )
+  / >🥕
 ```
 
-Includes:
+---
 
-* physical state (hunger, energy, bond)
-* emotional state
-* goals
-* memory history
-* personality arc
-* identity evolution
+## 🎭 Emotion-Based Animation
+
+Mochi’s body changes based on internal state:
+
+| State        | Expression |
+| ------------ | ---------- |
+| happy        | `(^.^)♡`   |
+| sad          | `(T.T)`    |
+| tired        | `(-.-)`    |
+| hungry       | `X.X`      |
+| affectionate | `(^.^)♡`   |
 
 ---
 
-# 🏗 System Structure
+## 🔁 Frame-Based Animation Engine
 
-```text id="x8k2lm"
+* non-blocking design
+* state-driven frame selection
+* smooth idle motion
+* lightweight terminal rendering
+
+---
+
+## 🧠 Animation Pipeline
+
+```text id="anim2"
+state → mood → animation engine → frame selector → render → terminal
+```
+
+---
+
+## 🐾 Idle Motion System
+
+Even when idle:
+
+* Mochi breathes
+* subtle frame cycling occurs
+* visual life is maintained
+
+---
+
+## ⚙️ Design Principles
+
+* animation never blocks logic loop
+* UI is separated from engine
+* state fully controls visuals
+* deterministic rendering system
+
+---
+
+# 🧩 System Structure
+
+```text id="struct1"
 terminal-pet/
 │
 ├── main.py
@@ -281,24 +239,22 @@ terminal-pet/
 │   ├── state.py
 │   ├── offline_sim.py
 │   ├── mood.py
-│   ├── drives.py
-│   ├── goals.py        # includes resolver
+│   ├── goals.py
 │   ├── planner.py
-│   ├── thoughts.py
 │   ├── actions.py
-│   ├── commands.py
 │   ├── validator.py
 │
 ├── agent/
-│   ├── brain.py        # LLM reasoning + goal selection
+│   ├── brain.py
 │   ├── prompt.py
 │
 ├── memory/
 │   ├── memory.py
 │
 ├── ui/
-│   ├── input_handler.py
 │   ├── render.py
+│   ├── animation.py
+│   ├── input_handler.py
 │
 └── data/
     ├── state.json
@@ -311,27 +267,25 @@ terminal-pet/
 
 ## Install dependencies
 
-```text id="v3k9pm"
-pip install -r requirements.txt
+```bash id="setup1"
+pip install requests
 ```
-
----
 
 ## Install Ollama
 
-https://ollama.ai
+[https://ollama.ai](https://ollama.ai)
 
 Run model:
 
-```text id="l9q2zx"
+```bash id="setup2"
 ollama run llama3
 ```
 
 ---
 
-## Run system
+# 🚀 Run System
 
-```text id="z9m2aa"
+```bash id="run1"
 python main.py
 ```
 
@@ -339,31 +293,28 @@ python main.py
 
 # 🎮 Commands
 
-```text id="k3p9lm"
+```text id="cmd1"
 feed    → reduce hunger
 play    → increase bond
 sleep   → restore energy
-status  → view state
+status  → view current state
 ```
 
 ---
 
-# 🔄 Runtime Cycle
+# 🔄 Runtime Loop
 
 Each tick:
 
 1. state updates
 2. user input processed
-3. drives computed
-4. rule + LLM goals generated
-5. goal resolver selects final goal
-6. planner executes step
-7. thought generated
-8. LLM expresses response
-9. memory updated
-10. personality evolves
-11. state persisted
-12. UI rendered
+3. mood computed
+4. LLM generates reasoning
+5. goals are resolved
+6. actions executed
+7. memory updated
+8. animation rendered
+9. state persisted
 
 ---
 
@@ -371,27 +322,47 @@ Each tick:
 
 * ⏳ Time is continuous
 * 🧠 Memory defines identity
-* ❤️ Emotion shapes decisions
+* ❤️ Emotion drives behavior
 * ⚖️ Rules ensure stability
 * 🤖 LLM provides reasoning
-* 🔁 Feedback drives evolution
+* 🎞️ UI reflects internal state
 
 ---
 
-# 🚀 Future Directions
+# 🚀 Future Evolution
 
-* 💤 dream / subconscious simulation
-* 🪞 deeper self-awareness layer
-* 🧩 multi-agent ecosystem
-* 📖 autobiographical expansion system
-* 🧠 internal debate / thought streams
+Planned upgrades:
+
+### 🧠 Advanced cognition
+
+* self-reflection (“I am changing”)
+* inner monologue system
+* multi-step planning
+
+### 🧩 Ecosystem mode
+
+* multiple creatures interacting
+* emotional relationships between entities
+
+### 💤 Dream system
+
+* subconscious memory replay
+* offline dream simulation
+
+### 💓 Emotional physics
+
+* heartbeat animation
+* stress-based motion changes
+* attachment-based visual intensity
 
 ---
 
 # 🧡 Final Note
 
-This system is not a simulation of a pet.
+Terminal Pet is not a chatbot.
 
 It is:
 
-> **A persistent cognitive architecture that evolves through time, memory, and layered reasoning.**
+> a persistent, evolving, emotionally reactive digital organism simulated through time, memory, and language.
+
+---
