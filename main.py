@@ -9,12 +9,12 @@ from engine.offline_sim import simulate_offline
 from engine.commands import handle_command
 
 from engine.drives import compute_drives
-from engine.goals import choose_goal
+from engine.goals import choose_goal, resolve_goal
 from engine.planner import plan_action
 from engine.thoughts import generate_thought
 
 from agent.prompt import build_prompt
-from agent.brain import decide
+from agent.brain import decide, reflect, llm_reason_goal
 
 from memory.memory import (
     init_memory,
@@ -28,7 +28,8 @@ from memory.memory import (
     reflect_identity, 
     generate_life_story,
     update_emotion_history, 
-    update_personality_arc
+    update_personality_arc,
+    summarize_memory_llm
 )
 
 from ui.input_handler import InputHandler
@@ -93,9 +94,11 @@ while True:
     drives = compute_drives(state, memory)
 
     # ---------------------------
-    # 4. goal (persistent)
+    # 4. goal reasoning via llm
     # ---------------------------
-    goal = choose_goal(state, drives)
+    llm_goal = choose_goal(state, drives)
+    rule_goal = llm_reason_goal(state, memory, drives)
+    goal = resolve_goal(llm_goal, rule_goal, state)
     state["goal"] = goal
 
     # ---------------------------
@@ -125,6 +128,15 @@ while True:
     # ---------------------------
     from engine.actions import apply_action
     state = apply_action(state, action)
+
+    reflection = reflect(state, memory, decision)
+
+    if reflection:
+        memory["events"].append({
+            "text": reflection.get("reflection", ""),
+            "importance": 0.7,
+            "time": time.time()
+        })
 
     # ---------------------------
     # 10. memory update + learning
@@ -162,6 +174,8 @@ while True:
         story = generate_life_story(memory)
         print("\n📖 Mochi's Story:", story[:120], "...")
 
+    if int(time.time()) % 60 == 0:
+        memory = summarize_memory_llm(memory)
     # ---------------------------
     # 15. render UI
     # ---------------------------

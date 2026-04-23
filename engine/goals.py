@@ -102,3 +102,39 @@ def is_goal_complete(state, goal):
         return False
 
     return False
+
+
+def resolve_goal(llm_goal, rule_goal, state):
+    """
+    Combines LLM intuition + rule-based safety
+    into a single stable goal.
+    """
+
+    # ---------------------------
+    # SAFETY OVERRIDES (HIGHEST PRIORITY)
+    # ---------------------------
+    if state["energy"] <= 1:
+        return {"type": "sleep"}
+
+    if state["hunger"] >= 9:
+        return {"type": "eat"}
+
+    # ---------------------------
+    # RULE GOAL HAS PRIORITY IF CRITICAL
+    # ---------------------------
+    if rule_goal and rule_goal.get("type") in ["eat", "sleep"]:
+        return rule_goal
+
+    # ---------------------------
+    # LLM CONFIDENCE CHECK
+    # ---------------------------
+    if llm_goal:
+        confidence = llm_goal.get("confidence", 0.5)
+
+        if confidence >= 0.6:
+            return llm_goal
+
+    # ---------------------------
+    # FALLBACK
+    # ---------------------------
+    return rule_goal or {"type": "rest"}

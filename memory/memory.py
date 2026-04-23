@@ -383,3 +383,30 @@ def update_personality_arc(memory):
         })
 
     return memory
+
+
+def summarize_memory_llm(memory):
+    events = memory["events"][-30:]
+
+    text = "\n".join(e["text"] for e in events if e["text"])
+
+    prompt = f"""
+Summarize this creature's life emotionally:
+
+{text}
+
+Output a short narrative summary.
+"""
+
+    try:
+        from agent.brain import decide
+
+        summary = decide(prompt)
+
+        if isinstance(summary, dict):
+            memory["summary"] = summary.get("message", "")
+
+    except:
+        pass
+
+    return memory
