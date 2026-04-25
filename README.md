@@ -241,7 +241,7 @@ Your creature is visually represented using ASCII animation:
 ## 1. Install dependencies
 
 ```bash
-pip install langchain langgraph pydantic requests
+pip install -r requirements.txt
 ```
 
 ---
