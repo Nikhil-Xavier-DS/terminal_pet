@@ -3,51 +3,42 @@ from typing import Literal, Optional
 
 
 # ---------------------------
-# CORE LLM OUTPUT
+# EMOTION OUTPUT
 # ---------------------------
-class AgentDecision(BaseModel):
-    goal: Literal[
-        "eat",
-        "sleep",
-        "play",
-        "seek_attention",
-        "explore",
-        "rest",
-        "do_nothing"
-    ]
+class EmotionOutput(BaseModel):
+    emotion: Literal["happy", "sad", "lonely", "anxious", "calm", "excited"]
+    goal: Literal["eat", "sleep", "play", "seek_attention", "explore", "rest"]
+    confidence: float
 
-    action: Literal[
-        "eat",
-        "sleep",
-        "play",
-        "seek_attention",
-        "do_nothing"
-    ]
 
+# ---------------------------
+# MEMORY OUTPUT
+# ---------------------------
+class MemoryOutput(BaseModel):
+    goal: Literal["eat", "sleep", "play", "seek_attention", "explore", "rest"]
+    confidence: float
+
+
+# ---------------------------
+# ACTION OUTPUT
+# ---------------------------
+class ActionOutput(BaseModel):
+    action: Literal["eat", "sleep", "play", "seek_attention", "do_nothing"]
     message: str
-    emotion: str
-    reflection: Optional[str] = None
 
 
 # ---------------------------
-# MEMORY EVENT STRUCTURE
+# ACTION OUTPUT
 # ---------------------------
-class MemoryEvent(BaseModel):
-    text: str
-    importance: float = 0.5
-    time: float
+class ReflectionOutput(BaseModel):
+    reflection: str
 
 
 # ---------------------------
-# GRAPH STATE (LangGraph SAFE)
+# FINAL STATE (optional use in graph)
 # ---------------------------
-class GraphState(BaseModel):
-    state: dict
-    memory: dict
-    mood: str
-
+class AgentState(BaseModel):
+    emotion: Optional[str] = None
     goal: Optional[str] = None
-    plan: Optional[str] = None
     action: Optional[str] = None
     message: Optional[str] = None
-    reflection: Optional[str] = None
