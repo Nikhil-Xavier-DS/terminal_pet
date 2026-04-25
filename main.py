@@ -5,12 +5,12 @@ from config import STATE_LIMITS
 from engine.state import load_state, save_state, tick, clamp
 from engine.mood import compute_mood
 from engine.offline_sim import simulate_offline
-
 from engine.commands import handle_command
 from engine.drives import compute_drives
-from engine.goals import choose_goal  # still useful as fallback
+from engine.goals import choose_goal
+from engine.actions import apply_action
 
-from agent.graph import run_agent  # ✅ NEW (LangGraph)
+from agent.multi_agent_graph import run_multi_agent_graph
 
 from memory.memory import (
     init_memory,
@@ -96,25 +96,14 @@ while True:
     drives = compute_drives(state, memory)
 
     # ---------------------------
-    # 5. fallback rule goal (safety layer)
+    # 6. goal - 🧠 LANGGRAPH MULTI-AGENT 
     # ---------------------------
-    rule_goal = choose_goal(state, drives)
-
-    # ---------------------------
-    # 6. 🧠 LANGGRAPH AGENT (REPLACES ALL LLM CALLS)
-    # ---------------------------
-    decision = run_agent(state, memory, mood)
-
-    # fallback safety if LLM fails
-    if not decision.get("goal"):
-        decision["goal"] = rule_goal
-
+    decision = run_multi_agent_graph(state, memory)
     state["goal"] = decision.get("goal")
 
     # ---------------------------
     # 7. apply action (from agent)
     # ---------------------------
-    from engine.actions import apply_action
     state = apply_action(state, decision.get("action"))
 
     # ---------------------------

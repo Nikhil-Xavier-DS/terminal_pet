@@ -2,28 +2,52 @@ from ui.animation import get_frame
 
 
 def render(state, decision, user_action=None):
-    frame = get_frame(state)
-
     print("\n" + "=" * 40)
 
-    # 🐰 Mochi (visual layer)
-    print(frame)
+    # 🐾 VISUAL (Creature)
+    frame = get_frame(state)
+    if frame:
+        print(frame)
 
+    # ---------------------------
     # 📊 STATE
+    # ---------------------------
     print("\n📊 STATE")
-    print(f"Hunger : {state['hunger']:.1f}")
-    print(f"Energy : {state['energy']:.1f}")
-    print(f"Bond   : {state['bond']:.1f}")
+    print(f"Hunger : {state.get('hunger', 0):.1f}")
+    print(f"Energy : {state.get('energy', 0):.1f}")
+    print(f"Bond   : {state.get('bond', 0):.1f}")
     print(f"Mood   : {state.get('mood', 'calm')}")
 
-    # 🧠 LLM OUTPUT
-    print("\n🧠 Mochi Thoughts")
-    print(decision.get("message", ""))
+    # ---------------------------
+    # 🧠 INTERNAL DECISION
+    # ---------------------------
+    print("\n🧠 INTERNAL STATE")
+    print(f"Emotion : {decision.get('emotion', '')}")
+    print(f"Goal    : {decision.get('goal', '')}")
+    print(f"Action  : {decision.get('action', '')}")
 
-    print(f"\n🎯 Goal: {decision.get('goal', '')}")
+    # ---------------------------
+    # ⚖️ INTERNAL DEBATE (SAFE)
+    # ---------------------------
+    debug = decision.get("decision_debug", {})
+    details = debug.get("details", [])
 
+    if details:
+        print("\n⚖️ Internal Debate:")
+        for line in details:
+            print("  -", line)
+
+    # ---------------------------
     # 🧑 USER ACTION
+    # ---------------------------
     if user_action:
         print(f"\n🧑 You: {user_action}")
 
-    print("=" * 40)
+    # ---------------------------
+    # 💬 EXPRESSION
+    # ---------------------------
+    message = decision.get("message", "...")
+    print("\n💬 Mochi:")
+    print(message)
+
+    print("\n" + "=" * 40)

@@ -1,106 +1,117 @@
-# 🧬 Terminal Pet — Autonomous Evolving Digital Creature
+# 🧬 Terminal Pet — Autonomous Multi-Agent Digital Creature
 
-A persistent, time-aware, emotionally evolving AI agent that lives inside your terminal.
+A **persistent, evolving AI lifeform** powered by a **multi-agent cognition system using LangGraph**.
 
-It is not a chatbot.
+This is not a chatbot.
 
-It is a **simulated digital organism** powered by:
+It is a **stateful digital organism** that:
 
-* local LLM (Ollama)
-* memory system
-* emotional engine
-* goal reasoning layer
-* time-based simulation
-
----
-
-# 🌌 Core Philosophy
-
-> **Time + Memory + Emotion + Reasoning = Identity**
-
-Mochi evolves continuously through:
-
-* interaction ⌨️
-* offline time ⏳
-* memory accumulation 🧠
-* emotional drift ❤️
-
-It develops:
-
-* personality arcs
-* emotional continuity
-* behavioral habits
-* long-term identity changes
+* lives across time ⏳
+* remembers experiences 💾
+* forms emotional bonds ❤️
+* makes decisions through **internal agent conflict** 🧠
 
 ---
 
-# 🧠 System Overview
+# 🌌 Core Idea
+
+Your pet is not controlled by a single brain.
+
+Instead, it is driven by **multiple internal agents** that:
+
+* feel (emotion)
+* remember (memory)
+* survive (rules)
+* decide (goal resolution)
+
+These agents **disagree, vote, and resolve conflicts** to produce behavior.
 
 ---
 
-## 🧠 Cognitive Architecture
+# 🧠 Intelligence Model
 
-Terminal Pet uses a layered reasoning system:
+## 🧬 Multi-Agent Cognition (LangGraph)
 
-```text id="arch1"
-State → Drives → Rule Goals → LLM Goals → Goal Resolver → Planner → Action → Memory → UI
+The system is built as a **LangGraph state machine**, where each node represents an independent agent.
+
+```text
+            ┌──────────────┐
+            │ Emotion Agent│
+            └──────┬───────┘
+                   │
+            ┌──────▼───────┐
+            │ Rule Agent   │
+            └──────┬───────┘
+                   │
+            ┌──────▼───────┐
+            │ Memory Agent │
+            └──────┬───────┘
+                   │
+         ┌─────────▼─────────┐
+         │ Goal Resolution   │  ← ⚖️ weighted voting
+         └─────────┬─────────┘
+                   │
+            ┌──────▼───────┐
+            │ Planner      │
+            └──────┬───────┘
+                   │
+            ┌──────▼───────┐
+            │ Action Agent │
+            └──────┬───────┘
+                   │
+            ┌──────▼───────┐
+            │ Reflection   │
+            └──────────────┘
 ```
 
 ---
 
-## ⚖️ Hybrid Decision System
+# ⚖️ Decision Making (Key Innovation)
 
-Mochi’s behavior is driven by two parallel systems:
+Each agent proposes a goal:
 
-### 1. Rule-Based System (Survival Layer)
+* Emotion Agent → “I feel lonely → seek attention”
+* Rule Agent → “Hunger high → eat”
+* Memory Agent → “User ignored me → seek attention”
 
-* hunger control
-* energy management
-* safety overrides
+These are resolved using:
 
-### 2. LLM Reasoning System (Intuition Layer)
+### 🧠 Weighted Confidence Voting
 
-* emotional interpretation
-* contextual reasoning
-* personality-driven decisions
+```text
+score = weight × confidence
+```
 
-### 3. Goal Resolver (Executive Layer)
+Example:
 
-Combines both systems into a single stable goal.
+```text
+Emotion: seek_attention (0.7 × 1.2 = 0.84)
+Rule:    eat            (0.9 × 1.6 = 1.44)
+Memory:  seek_attention (0.6 × 1.0 = 0.60)
 
----
+→ Final Goal: eat
+```
 
-# 🎯 Goal System
+This creates:
 
-Goals are dynamically generated and resolved:
-
-* eat
-* sleep
-* play
-* seek_attention
-* explore
-* rest
-
-The resolver ensures:
-
-* survival always prioritized
-* LLM confidence is respected
-* system stability is preserved
+* internal conflict
+* non-deterministic behavior
+* emergent personality
 
 ---
 
 # ⏳ Offline Life Simulation
 
-When reopened, Mochi simulates life while you were away:
+The creature continues to exist when the app is closed.
 
-* hunger increases
-* energy decreases
-* emotional drift occurs
-* thoughts are generated
+On restart, it simulates:
 
-Example:
+* hunger increase
+* energy decay
+* emotional drift
+* internal thoughts
 
-```text id="offline1"
+```text
 ⏳ While you were away...
 
 🐾 I felt hungry while waiting...
@@ -109,260 +120,189 @@ Example:
 
 ---
 
+# ❤️ Relationship System
+
+Tracks long-term bond:
+
+* increases with interaction
+* decreases with neglect
+* influences tone, behavior, and decisions
+
+---
+
 # 🧠 Memory System
 
-Mochi maintains structured memory:
+### Types of memory:
 
-```json id="mem1"
-{
-  "text": "I was fed today",
-  "importance": 0.7,
-  "time": 123456
-}
-```
+* short-term events
+* emotional state
+* long-term summary
 
-Features:
+### Features:
 
-* event tracking
-* importance scoring
-* compression system
-* long-term summaries
+* automatic compression
+* emotional drift
 * personality influence
 
 ---
 
-# 🧬 Personality System
+# 🧬 Personality Evolution
 
-Mochi evolves over time based on:
+Over time, your pet develops traits like:
+
+* clingy
+* anxious
+* loyal
+* affectionate
+
+Driven by:
 
 * neglect
-* care
-* interaction frequency
-* bond level
-
-Possible arcs:
-
-* affectionate ❤️
-* anxious 😟
-* loyal 🐾
-* detached 🧊
+* attention
+* interaction patterns
 
 ---
 
-# 📖 Life Story System
+# 🧠 Reflection & Identity
 
-Mochi can generate narrative memory:
+The system periodically:
 
-* compresses past events
-* builds identity timeline
-* expresses lived experience
+* reflects on its own actions
+* updates emotional history
+* generates life story
 
----
-
-# 🎞️ TERMINAL ANIMATION SYSTEM (NEW)
-
-Mochi is now a **visually expressive ASCII creature**.
-
----
-
-## 🐾 Big ASCII Creature
-
-Mochi is rendered as a full-body animated entity:
-
-```text id="anim1"
-     (\_/)
-   ( •ᴗ• )
-  / >🥕
+```text
+📖 Mochi's Story:
+"I remember waiting for you... but also the times you cared for me."
 ```
 
 ---
 
-## 🎭 Emotion-Based Animation
+# 🎮 Interaction
 
-Mochi’s body changes based on internal state:
+Commands:
 
-| State        | Expression |
-| ------------ | ---------- |
-| happy        | `(^.^)♡`   |
-| sad          | `(T.T)`    |
-| tired        | `(-.-)`    |
-| hungry       | `X.X`      |
-| affectionate | `(^.^)♡`   |
+```bash
+feed
+play
+sleep
+status
+```
 
----
+Example:
 
-## 🔁 Frame-Based Animation Engine
-
-* non-blocking design
-* state-driven frame selection
-* smooth idle motion
-* lightweight terminal rendering
-
----
-
-## 🧠 Animation Pipeline
-
-```text id="anim2"
-state → mood → animation engine → frame selector → render → terminal
+```text
+🧑 You: You fed Mochi 🍖
+Mochi: That felt nice... I feel safer with you.
 ```
 
 ---
 
-## 🐾 Idle Motion System
+# 🧬 Persistent State
 
-Even when idle:
+Stored locally:
 
-* Mochi breathes
-* subtle frame cycling occurs
-* visual life is maintained
+```
+data/state.json
+data/memory.json
+```
+
+Includes:
+
+* hunger
+* energy
+* bond
+* last_seen
+* emotional memory
 
 ---
 
-## ⚙️ Design Principles
+# 🎭 Terminal Animation
 
-* animation never blocks logic loop
-* UI is separated from engine
-* state fully controls visuals
-* deterministic rendering system
+Your creature is visually represented using ASCII animation:
+
+* mood-based expressions
+* idle movement
+* emotional feedback
 
 ---
 
-# 🧩 System Structure
+# ⚙️ Tech Stack
 
-```text id="struct1"
-terminal-pet/
-│
-├── main.py
-├── config.py
-│
-├── engine/
-│   ├── state.py
-│   ├── offline_sim.py
-│   ├── mood.py
-│   ├── goals.py
-│   ├── planner.py
-│   ├── actions.py
-│   ├── validator.py
-│
-├── agent/
-│   ├── brain.py
-│   ├── prompt.py
-│
-├── memory/
-│   ├── memory.py
-│
-├── ui/
-│   ├── render.py
-│   ├── animation.py
-│   ├── input_handler.py
-│
-└── data/
-    ├── state.json
-    ├── memory.json
+* 🧠 LangGraph (multi-agent orchestration)
+* 🔗 LangChain (LLM interface)
+* 🤖 Ollama (local LLM runtime)
+* 🐍 Python
+
+---
+
+# 🚀 Setup
+
+## 1. Install dependencies
+
+```bash
+pip install langchain langgraph pydantic requests
 ```
 
 ---
 
-# ⚙️ Setup
+## 2. Install Ollama
 
-## Install dependencies
+👉 [https://ollama.ai](https://ollama.ai)
 
-```bash id="setup1"
-pip install requests
-```
+---
 
-## Install Ollama
+## 3. Pull model
 
-[https://ollama.ai](https://ollama.ai)
-
-Run model:
-
-```bash id="setup2"
-ollama run llama3
+```bash
+ollama pull llama3.2:1b
 ```
 
 ---
 
-# 🚀 Run System
+## 4. Run
 
-```bash id="run1"
+```bash
 python main.py
 ```
 
 ---
 
-# 🎮 Commands
+# 🧠 Why This Is Different
 
-```text id="cmd1"
-feed    → reduce hunger
-play    → increase bond
-sleep   → restore energy
-status  → view current state
-```
+Most “AI pets” are:
 
----
+* scripted
+* stateless
+* reactive
 
-# 🔄 Runtime Loop
+This system is:
 
-Each tick:
+> 🧬 a persistent, evolving, multi-agent organism
 
-1. state updates
-2. user input processed
-3. mood computed
-4. LLM generates reasoning
-5. goals are resolved
-6. actions executed
-7. memory updated
-8. animation rendered
-9. state persisted
+It:
+
+* thinks internally
+* argues with itself
+* changes over time
+* remembers you
 
 ---
 
-# 🧬 Design Principles
+# 🚀 Future Directions
 
-* ⏳ Time is continuous
-* 🧠 Memory defines identity
-* ❤️ Emotion drives behavior
-* ⚖️ Rules ensure stability
-* 🤖 LLM provides reasoning
-* 🎞️ UI reflects internal state
-
----
-
-# 🚀 Future Evolution
-
-Planned upgrades:
-
-### 🧠 Advanced cognition
-
-* self-reflection (“I am changing”)
-* inner monologue system
-* multi-step planning
-
-### 🧩 Ecosystem mode
-
-* multiple creatures interacting
-* emotional relationships between entities
-
-### 💤 Dream system
-
-* subconscious memory replay
-* offline dream simulation
-
-### 💓 Emotional physics
-
-* heartbeat animation
-* stress-based motion changes
-* attachment-based visual intensity
+* 🧠 doubt + hesitation system
+* 🧩 multi-creature ecosystem
+* 🪞 deeper self-awareness
+* 📖 autobiographical storytelling
+* 💤 dreams and subconscious simulation
 
 ---
 
 # 🧡 Final Note
 
-Terminal Pet is not a chatbot.
+This is not just a project.
 
-It is:
+It is an experiment in:
 
-> a persistent, evolving, emotionally reactive digital organism simulated through time, memory, and language.
-
----
+> **emergent digital life through time, memory, and internal conflict**
