@@ -7,14 +7,10 @@ from engine.mood import compute_mood
 from engine.offline_sim import simulate_offline
 
 from engine.commands import handle_command
-
 from engine.drives import compute_drives
-from engine.goals import choose_goal, resolve_goal
-from engine.planner import plan_action
-from engine.thoughts import generate_thought
+from engine.goals import choose_goal  # still useful as fallback
 
-from agent.prompt import build_prompt
-from agent.brain import decide, reflect, llm_reason_goal
+from agent.graph import run_agent  # ✅ NEW (LangGraph)
 
 from memory.memory import (
     init_memory,
@@ -25,9 +21,9 @@ from memory.memory import (
     compress_memory,
     adapt_personality,
     update_boredom,
-    reflect_identity, 
+    reflect_identity,
     generate_life_story,
-    update_emotion_history, 
+    update_emotion_history,
     update_personality_arc,
     summarize_memory_llm
 )
@@ -89,95 +85,91 @@ while True:
     memory = update_boredom(memory, user_action)
 
     # ---------------------------
-    # 3. drives
-    # ---------------------------
-    drives = compute_drives(state, memory)
-
-    # ---------------------------
-    # 4. goal reasoning via llm
-    # ---------------------------
-    llm_goal = choose_goal(state, drives)
-    rule_goal = llm_reason_goal(state, memory, drives)
-    goal = resolve_goal(llm_goal, rule_goal, state)
-    state["goal"] = goal
-
-    # ---------------------------
-    # 5. plan action
-    # ---------------------------
-    action = plan_action(state, goal)
-
-    # ---------------------------
-    # 6. internal thought
-    # ---------------------------
-    thought = generate_thought(state, memory, goal)
-
-    # ---------------------------
-    # 7. mood
+    # 3. mood (before agent)
     # ---------------------------
     mood = compute_mood(state, memory)
     state["mood"] = mood
 
     # ---------------------------
-    # 8. LLM (expression only)
+    # 4. drives (still useful context)
     # ---------------------------
-    prompt = build_prompt(state, memory, mood, goal, thought, action)
-    decision = decide(prompt, action, goal, thought)
+    drives = compute_drives(state, memory)
 
     # ---------------------------
-    # 9. apply action
+    # 5. fallback rule goal (safety layer)
+    # ---------------------------
+    rule_goal = choose_goal(state, drives)
+
+    # ---------------------------
+    # 6. 🧠 LANGGRAPH AGENT (REPLACES ALL LLM CALLS)
+    # ---------------------------
+    decision = run_agent(state, memory, mood)
+
+    # fallback safety if LLM fails
+    if not decision.get("goal"):
+        decision["goal"] = rule_goal
+
+    state["goal"] = decision.get("goal")
+
+    # ---------------------------
+    # 7. apply action (from agent)
     # ---------------------------
     from engine.actions import apply_action
-    state = apply_action(state, action)
+    state = apply_action(state, decision.get("action"))
 
-    reflection = reflect(state, memory, decision)
-
-    if reflection:
+    # ---------------------------
+    # 8. reflection → memory (already from graph)
+    # ---------------------------
+    if decision.get("reflection"):
         memory["events"].append({
-            "text": reflection.get("reflection", ""),
+            "text": decision["reflection"],
             "importance": 0.7,
             "time": time.time()
         })
 
     # ---------------------------
-    # 10. memory update + learning
+    # 9. memory update + learning
     # ---------------------------
     memory = update_memory(memory, decision, user_action)
     memory = adapt_personality(memory)
     memory = evolve_personality(state, memory)
     memory = update_emotion_history(memory)
     memory = update_personality_arc(memory)
-    
-    # identity reflection (occasionally)
+
+    # identity reflection (slow)
     if int(time.time()) % 20 == 0:
         memory = reflect_identity(memory)
 
     # ---------------------------
-    # 11. memory compression
+    # 10. memory compression
     # ---------------------------
     memory = compress_memory(memory)
 
     # ---------------------------
-    # 12. clamp state
+    # 11. clamp state
     # ---------------------------
     state = clamp(state, STATE_LIMITS)
 
     # ---------------------------
-    # 13. persist (IMPORTANT: before render)
+    # 12. persist
     # ---------------------------
     save_state(state)
     save_memory(memory)
 
     # ---------------------------
-    # 14. to see story
+    # 13. story generation
     # ---------------------------
     if int(time.time()) % 30 == 0:
         story = generate_life_story(memory)
-        print("\n📖 Mochi's Story:", story[:120], "...")
+        if story:
+            print("\n📖 Mochi's Story:", story[:120], "...")
 
+    # periodic summarization
     if int(time.time()) % 60 == 0:
         memory = summarize_memory_llm(memory)
+
     # ---------------------------
-    # 15. render UI
+    # 14. render
     # ---------------------------
     render(state, decision, user_feedback)
 
