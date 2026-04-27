@@ -1,85 +1,119 @@
-from collections import defaultdict
-import json, re
 from langgraph.graph import StateGraph, END
 from langchain_community.llms import Ollama
-from pydantic import ValidationError
-
+from agent.tool_registry import TOOLS
 from config import MODEL
-from agent.schemas import EmotionOutput, MemoryOutput, ActionOutput, ReflectionOutput
+from collections import defaultdict
+import json
 
 llm = Ollama(model=MODEL)
 
-AGENT_WEIGHTS = {
-    "emotion": 1.2,
-    "rule": 1.6,     # survival should dominate
-    "memory": 1.0
-}
 
-# ---------------------------
+# =========================================================
 # INIT STATE
-# ---------------------------
+# =========================================================
 def init_state(state, memory):
     return {
         "state": state,
         "memory": memory,
 
+        # tools injected into graph state
+        "tools": TOOLS,
+
         # agent outputs
         "emotion": None,
         "emotion_goal": None,
-        "rule_goal": None,
-        "memory_goal": None,
+        "emotion_conf": 0,
 
-        # resolved
+        "rule_goal": None,
+        "rule_conf": 0,
+
+        "memory_goal": None,
+        "memory_conf": 0,
+
         "goal": None,
-        "plan": None,
-        "action": None,
-        "message": None,
-        "reflection": None,
+
+        # tool system
+        "tool_calls": [],
+        "tool_results": None,
+
+        # debug
+        "decision_debug": None,
     }
 
 
-# ---------------------------
-# 1. EMOTION AGENT
-# ---------------------------
-def emotion_agent(data):
-    state = data["state"]
+# =========================================================
+# TOOL ROUTER NODE
+# =========================================================
+def tool_router(data):
+    calls = data.get("tool_calls", [])
+    tools = data.get("tools", {})
 
-    prompt = f"""
-Emotion agent.
+    results = []
 
-Hunger: {state['hunger']}
-Energy: {state['energy']}
-Bond: {state['bond']}
+    for call in calls:
+        tool_name = call.get("tool")
+        args = call.get("args", {})
 
-Return JSON:
-{{
- "emotion": "...",
- "goal": "eat|sleep|play|seek_attention|explore|rest",
- "confidence": 0.0-1.0
-}}
-"""
+        if tool_name in tools:
+            try:
+                result = tools[tool_name](data)
+                results.append({tool_name: result})
+            except Exception as e:
+                results.append({tool_name: {"error": str(e)}})
 
-    try:
-        raw = llm.invoke(prompt)
-
-        # 🔥 force validation
-        result = EmotionOutput.model_validate_json(raw)
-
-        data["emotion"] = result.emotion
-        data["emotion_goal"] = result.goal
-        data["emotion_conf"] = result.confidence
-
-    except ValidationError:
-        data["emotion"] = "calm"
-        data["emotion_goal"] = "rest"
-        data["emotion_conf"] = 0.5
+    data["tool_results"] = results
+    data["tool_calls"] = []
 
     return data
 
 
-# ---------------------------
-# 2. RULE AGENT (NO LLM)
-# ---------------------------
+# =========================================================
+# EMOTION AGENT
+# =========================================================
+def emotion_agent(data):
+    state = data["state"]
+
+    prompt = f"""
+You are an emotion agent.
+
+TOOLS:
+- memory_read
+- time_tool
+
+Return JSON ONLY:
+
+{{
+ "emotion": "happy|sad|lonely|calm|anxious|excited",
+ "goal": "eat|sleep|play|seek_attention|rest",
+ "confidence": 0.0-1.0,
+ "tool_calls": [
+   {{"tool": "memory_read", "args": {{}}}}
+ ]
+}}
+
+State:
+Hunger={state['hunger']}
+Energy={state['energy']}
+Bond={state['bond']}
+"""
+
+    try:
+        parsed = json.loads(llm.invoke(prompt))
+
+        data["emotion"] = parsed.get("emotion")
+        data["emotion_goal"] = parsed.get("goal")
+        data["emotion_conf"] = parsed.get("confidence", 0.5)
+        data["tool_calls"] = parsed.get("tool_calls", [])
+
+    except:
+        data["tool_calls"] = []
+
+    return data
+
+
+# =========================================================
+# RULE AGENT (NO TOOLS)
+# =========================================================
 def rule_agent(data):
     state = data["state"]
 
@@ -96,73 +130,60 @@ def rule_agent(data):
     return data
 
 
-# ---------------------------
-# 3. MEMORY AGENT
-# ---------------------------
+# =========================================================
+# MEMORY AGENT (TOOL-AWARE)
+# =========================================================
 def memory_agent(data):
-    memory = data["memory"]
-    recent = memory.get("events", [])[-5:]
+    prompt = """
+Use memory_read tool if needed.
 
-    prompt = f"""
-Memory agent.
-
-Recent events:
-{recent}
-
-Return JSON:
-{{
- "goal": "eat|sleep|play|seek_attention|explore|rest",
- "confidence": 0.0-1.0
-}}
+Return JSON ONLY:
+{
+ "goal": "eat|sleep|play|seek_attention|rest",
+ "confidence": 0.0-1.0,
+ "tool_calls": [
+   {"tool": "memory_read", "args": {}}
+ ]
+}
 """
 
     try:
-        raw = llm.invoke(prompt)
-        result = MemoryOutput.model_validate_json(raw)
+        parsed = json.loads(llm.invoke(prompt))
 
-        data["memory_goal"] = result.goal
-        data["memory_conf"] = result.confidence
+        data["memory_goal"] = parsed.get("goal")
+        data["memory_conf"] = parsed.get("confidence", 0.5)
+        data["tool_calls"] = parsed.get("tool_calls", [])
 
-    except ValidationError:
+    except:
         data["memory_goal"] = "rest"
         data["memory_conf"] = 0.5
+        data["tool_calls"] = []
 
     return data
 
 
-# ---------------------------
-# 4. GOAL RESOLUTION (VOTING)
-# ---------------------------
-def normalize_goal(goal):
-    # handle list
-    if isinstance(goal, list):
-        return goal[0] if goal else None
+# =========================================================
+# GOAL RESOLUTION (WEIGHTED VOTING)
+# =========================================================
+AGENT_WEIGHTS = {
+    "emotion": 1.2,
+    "rule": 1.6,
+    "memory": 1.0
+}
 
-    # handle None
-    if goal is None:
-        return None
-
-    # convert to string
-    if not isinstance(goal, str):
-        goal = str(goal)
-
-    return goal.strip().lower()
 
 def resolve_goal(data):
     scores = defaultdict(float)
 
-    # collect votes
     agents = [
-        ("emotion", data.get("emotion_goal"), data.get("emotion_conf", 0)),
-        ("rule", data.get("rule_goal"), data.get("rule_conf", 0)),
-        ("memory", data.get("memory_goal"), data.get("memory_conf", 0)),
+        ("emotion", data.get("emotion_goal"), data.get("emotion_conf")),
+        ("rule", data.get("rule_goal"), data.get("rule_conf")),
+        ("memory", data.get("memory_goal"), data.get("memory_conf")),
     ]
 
     debug = []
 
     for name, goal, conf in agents:
-        goal = normalize_goal(goal)
-
         if not goal:
             continue
 
@@ -171,38 +192,29 @@ def resolve_goal(data):
 
         scores[goal] += score
 
-        debug.append(f"{name}: {goal} (conf={conf:.2f}, weight={weight}) → {score:.2f}")
+        debug.append(f"{name}: {goal} ({conf:.2f}) → {score:.2f}")
 
     if not scores:
-        data["goal"] = "do_nothing"
+        data["goal"] = "rest"
         return data
 
-    # pick highest score
-    best_goal = max(scores, key=scores.get)
-
-    data["goal"] = best_goal
-
-    # 🔥 OPTIONAL: introspection (VERY COOL)
-    data["decision_debug"] = {
-        "scores": dict(scores),
-        "details": debug
-    }
+    data["goal"] = max(scores, key=scores.get)
+    data["decision_debug"] = {"details": debug}
 
     return data
 
 
-# ---------------------------
-# 5. PLANNER
-# ---------------------------
+# =========================================================
+# PLANNER
+# =========================================================
 def planner(data):
     goal = data["goal"]
 
     plans = {
-        "eat": "find food → eat",
+        "eat": "find food",
         "sleep": "rest safely",
         "play": "engage user",
         "seek_attention": "express emotion",
-        "explore": "wander",
         "rest": "idle"
     }
 
@@ -210,89 +222,120 @@ def planner(data):
     return data
 
 
-# ---------------------------
-# 6. ACTION AGENT
-# ---------------------------
+# =========================================================
+# ACTION AGENT (TOOL-CAPABLE)
+# =========================================================
 def action_agent(data):
     goal = data["goal"]
-    emotion = data["emotion"]
 
     prompt = f"""
-Action agent.
+You are an action agent.
 
 Goal: {goal}
-Emotion: {emotion}
 
-Return JSON:
+Return JSON ONLY:
 {{
  "action": "eat|sleep|play|seek_attention|do_nothing",
- "message": "..."
+ "message": "...",
+ "tool_calls": []
 }}
 """
+
     try:
-        raw = llm.invoke(prompt)
-        result = ActionOutput.model_validate_json(raw)
+        parsed = json.loads(llm.invoke(prompt))
 
-        data["action"] = result.action
-        data["message"] = result.message
+        data["action"] = parsed.get("action")
+        data["message"] = parsed.get("message")
+        data["tool_calls"] = parsed.get("tool_calls", [])
 
-    except ValidationError:
-        data["action"] = "do_nothing"
-        data["message"] = "..."
+    except:
+        data["tool_calls"] = []
 
     return data
 
 
-# ---------------------------
-# 7. REFLECTION AGENT
-# ---------------------------
+# =========================================================
+# REFLECTION AGENT (CAN WRITE MEMORY)
+# =========================================================
 def reflection_agent(data):
-    msg = data["message"]
+    msg = data.get("message", "")
 
     prompt = f"""
-Reflect:
+Reflect on:
 
-"{msg}"
+{msg}
 
-Return one sentence.
+Return JSON ONLY:
+{{
+ "reflection": "...",
+ "tool_calls": []
+}}
 """
-    try:
-        raw = llm.invoke(prompt)
-        result = ReflectionOutput.model_validate_strings(raw)
 
-        data["reflection"] = result.strip()
-    
-    except ValidationError:
-        data["reflection"] = "..."
+    try:
+        parsed = json.loads(llm.invoke(prompt))
+
+        data["reflection"] = parsed.get("reflection")
+        data["tool_calls"] = parsed.get("tool_calls", [])
+
+    except:
+        data["tool_calls"] = []
 
     return data
 
 
-# ---------------------------
+# =========================================================
+# ROUTING LOGIC
+# =========================================================
+def route_tools_or_next(next_node):
+    def route(data):
+        if data.get("tool_calls"):
+            return "tool_router"
+        return next_node
+    return route
+
+
+# =========================================================
 # BUILD GRAPH
-# ---------------------------
+# =========================================================
 def build_graph():
     g = StateGraph(dict)
 
     g.add_node("emotion", emotion_agent)
     g.add_node("rule", rule_agent)
     g.add_node("memory", memory_agent)
-
     g.add_node("resolve", resolve_goal)
-    g.add_node("plan", planner)
+    g.add_node("planner", planner)
     g.add_node("action", action_agent)
     g.add_node("reflect", reflection_agent)
+    g.add_node("tool_router", tool_router)
 
     g.set_entry_point("emotion")
 
-    # parallel-ish branches (sequential execution but independent logic)
-    g.add_edge("emotion", "rule")
-    g.add_edge("rule", "memory")
-    g.add_edge("memory", "resolve")
+    # emotion → maybe tools → rule
+    g.add_conditional_edges("emotion", route_tools_or_next("rule"))
+    g.add_edge("tool_router", "emotion")
 
-    g.add_edge("resolve", "plan")
-    g.add_edge("plan", "action")
-    g.add_edge("action", "reflect")
+    # rule → memory
+    g.add_edge("rule", "memory")
+
+    # memory → maybe tools → resolve
+    g.add_conditional_edges("memory", route_tools_or_next("resolve"))
+    g.add_edge("tool_router", "memory")
+
+    # resolve → planner
+    g.add_edge("resolve", "planner")
+
+    # planner → action
+    g.add_edge("planner", "action")
+
+    # action → maybe tools → reflect
+    g.add_conditional_edges("action", route_tools_or_next("reflect"))
+    g.add_edge("tool_router", "action")
+
+    # reflect → maybe tools → END
+    g.add_conditional_edges("reflect", route_tools_or_next("end"))
+    g.add_edge("tool_router", "reflect")
 
     g.add_edge("reflect", END)
 
@@ -302,17 +345,9 @@ def build_graph():
 graph = build_graph()
 
 
-# ---------------------------
+# =========================================================
 # PUBLIC API
-# ---------------------------
+# =========================================================
 def run_multi_agent_graph(state, memory):
     data = init_state(state, memory)
-    result = graph.invoke(data)
-
-    return {
-        "emotion": result.get("emotion"),
-        "goal": result.get("goal"),
-        "action": result.get("action"),
-        "message": result.get("message"),
-        "reflection": result.get("reflection"),
-    }
+    return graph.invoke(data)
