@@ -1,20 +1,51 @@
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
-from langchain_community.llms import Ollama
-from langgraph.prebuilt import create_react_agent
+from langgraph.prebuilt import ToolNode, create_react_agent
+from langchain_openai import ChatOpenAI
 from agent.tool_registry import TOOLS
-from config import MODEL
 from collections import defaultdict
 import json
+import re
 
-
-from langchain_openai import ChatOpenAI
-
+# =========================================================
+# LLM (LM STUDIO / OPENAI COMPATIBLE)
+# =========================================================
 llm = ChatOpenAI(
     base_url="http://127.0.0.1:1234/v1",
-    api_key="lm-studio",  # anything works
-    model="local-model"
+    api_key="lm-studio",
+    model="local-model",
+    temperature=0.7
 )
+
+# =========================================================
+# SAFE JSON PARSER (CRITICAL FIX)
+# =========================================================
+def safe_json_parse(text: str):
+    if not text:
+        return {}
+
+    text = str(text).strip()
+    text = re.sub(r"```json|```", "", text)
+
+    try:
+        return json.loads(text)
+    except:
+        pass
+
+    try:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    except:
+        pass
+
+    return {}
+
+
+# =========================================================
+# REACT EXECUTOR (TOOLS ENABLED)
+# =========================================================
+react_agent = create_react_agent(llm, tools=TOOLS)
+tool_node = ToolNode(TOOLS)
 
 
 # =========================================================
@@ -25,11 +56,6 @@ def init_state(state, memory):
         "state": state,
         "memory": memory,
 
-        # tools injected into graph state
-        "tools": TOOLS,
-
-        # agent outputs
-        "emotion": None,
         "emotion_goal": None,
         "emotion_conf": 0,
 
@@ -39,283 +65,198 @@ def init_state(state, memory):
         "memory_goal": None,
         "memory_conf": 0,
 
+        "planner_goal": None,
+        "planner_conf": 0,
+
         "goal": None,
-
-        # tool system
-        "tool_calls": [],
-        "tool_results": None,
-
-        # debug
-        "decision_debug": None,
-    }
-
-
-agent = create_react_agent(
-    llm,
-    tools=TOOLS
-)
-
-
-# =========================================================
-# TOOL ROUTER NODE
-# =========================================================
-tool_node = ToolNode(TOOLS)
-
-
-# =========================================================
-# EMOTION AGENT
-# =========================================================
-def emotion_node(state):
-    messages = state["messages"]
-
-    response = llm.invoke(messages)
-
-    return {
-        "messages": messages + [response]
+        "action_result": None,
+        "decision_debug": {}
     }
 
 
 # =========================================================
-# RULE AGENT (NO TOOLS)
+# 1. EMOTION AGENT (LLM + SAFE PARSE)
 # =========================================================
-def rule_agent(data):
-    state = data["state"]
+def emotion_agent(data):
+    s = data["state"]
 
-    if state["hunger"] > 8:
-        data["rule_goal"] = "eat"
-        data["rule_conf"] = 0.9
-    elif state["energy"] < 2:
-        data["rule_goal"] = "sleep"
-        data["rule_conf"] = 0.85
-    else:
-        data["rule_goal"] = "play"
-        data["rule_conf"] = 0.6
+    prompt = f"""
+Return ONLY JSON:
 
-    return data
+{{"goal":"eat|sleep|play|rest","confidence":0-1}}
 
-
-# =========================================================
-# MEMORY AGENT (TOOL-AWARE)
-# =========================================================
-def memory_agent(data):
-    prompt = """
-Use memory_read tool if needed.
-
-Return JSON ONLY:
-{
- "goal": "eat|sleep|play|seek_attention|rest",
- "confidence": 0.0-1.0,
- "tool_calls": [
-   {"tool": "memory_read", "args": {}}
- ]
-}
+State:
+hunger={s['hunger']}
+energy={s['energy']}
+bond={s['bond']}
+mood={s.get('mood')}
 """
 
-    try:
-        parsed = json.loads(llm.invoke(prompt))
+    raw = llm.invoke(prompt)
+    res = safe_json_parse(raw.content if hasattr(raw, "content") else str(raw))
 
-        data["memory_goal"] = parsed.get("goal")
-        data["memory_conf"] = parsed.get("confidence", 0.5)
-        data["tool_calls"] = parsed.get("tool_calls", [])
-
-    except:
-        data["memory_goal"] = "rest"
-        data["memory_conf"] = 0.5
-        data["tool_calls"] = []
-
+    data["emotion_goal"] = res.get("goal", "rest")
+    data["emotion_conf"] = float(res.get("confidence", 0.5))
     return data
 
 
 # =========================================================
-# GOAL RESOLUTION (WEIGHTED VOTING)
+# 2. RULE AGENT (DETERMINISTIC)
 # =========================================================
-AGENT_WEIGHTS = {
+def rule_agent(data):
+    s = data["state"]
+
+    if s["hunger"] > 8:
+        g, c = "eat", 0.95
+    elif s["energy"] < 2:
+        g, c = "sleep", 0.9
+    else:
+        g, c = "play", 0.6
+
+    data["rule_goal"] = g
+    data["rule_conf"] = c
+    return data
+
+
+# =========================================================
+# 3. MEMORY AGENT (SAFE + LIGHTWEIGHT)
+# =========================================================
+def memory_agent(data):
+    recent = data["memory"].get("events", [])[-5:]
+
+    prompt = f"""
+Memory:
+{recent}
+
+Return ONLY JSON:
+{{"goal":"eat|sleep|play|rest","confidence":0-1}}
+"""
+
+    raw = llm.invoke(prompt)
+    res = safe_json_parse(raw.content if hasattr(raw, "content") else str(raw))
+
+    data["memory_goal"] = res.get("goal", "rest")
+    data["memory_conf"] = float(res.get("confidence", 0.5))
+    return data
+
+
+# =========================================================
+# 4. PLANNER AGENT
+# =========================================================
+def planner_agent(data):
+    prompt = f"""
+Combine:
+
+Emotion: {data['emotion_goal']}
+Rule: {data['rule_goal']}
+Memory: {data['memory_goal']}
+
+Return ONLY JSON:
+{{"goal":"eat|sleep|play|rest","confidence":0-1}}
+"""
+
+    raw = llm.invoke(prompt)
+    res = safe_json_parse(raw.content if hasattr(raw, "content") else str(raw))
+
+    data["planner_goal"] = res.get("goal", "rest")
+    data["planner_conf"] = float(res.get("confidence", 0.5))
+    return data
+
+
+# =========================================================
+# 5. WEIGHTED RESOLVER
+# =========================================================
+WEIGHTS = {
     "emotion": 1.2,
     "rule": 1.6,
-    "memory": 1.0
+    "memory": 1.0,
+    "planner": 1.3
 }
-
 
 def resolve_goal(data):
     scores = defaultdict(float)
+    debug = []
 
     agents = [
-        ("emotion", data.get("emotion_goal"), data.get("emotion_conf")),
-        ("rule", data.get("rule_goal"), data.get("rule_conf")),
-        ("memory", data.get("memory_goal"), data.get("memory_conf")),
+        ("emotion", data["emotion_goal"], data["emotion_conf"]),
+        ("rule", data["rule_goal"], data["rule_conf"]),
+        ("memory", data["memory_goal"], data["memory_conf"]),
+        ("planner", data["planner_goal"], data["planner_conf"]),
     ]
-
-    debug = []
 
     for name, goal, conf in agents:
         if not goal:
             continue
 
-        weight = AGENT_WEIGHTS.get(name, 1.0)
-        score = weight * conf
-
+        score = WEIGHTS[name] * float(conf)
         scores[goal] += score
+        debug.append(f"{name}: {goal} → {score:.2f}")
 
-        debug.append(f"{name}: {goal} ({conf:.2f}) → {score:.2f}")
-
-    if not scores:
-        data["goal"] = "rest"
-        return data
-
-    data["goal"] = max(scores, key=scores.get)
+    data["goal"] = max(scores, key=scores.get) if scores else "rest"
     data["decision_debug"] = {"details": debug}
-
     return data
 
 
 # =========================================================
-# PLANNER
+# 6. EXECUTION AGENT (REACT + TOOLS)
 # =========================================================
-def planner(data):
+def execute_agent(data):
     goal = data["goal"]
 
-    plans = {
-        "eat": "find food",
-        "sleep": "rest safely",
-        "play": "engage user",
-        "seek_attention": "express emotion",
-        "rest": "idle"
-    }
+    result = react_agent.invoke({
+        "messages": [
+            ("system", "You are the execution engine of a virtual pet. Use tools if needed."),
+            ("user", f"Execute goal: {goal}")
+        ],
+        "state": data["state"],
+        "memory": data["memory"]
+    })
 
-    data["plan"] = plans.get(goal, "idle")
+    data["action_result"] = result["messages"][-1].content
     return data
 
 
 # =========================================================
-# ACTION AGENT (TOOL-CAPABLE)
+# TOOL ROUTER
 # =========================================================
-def action_agent(data):
-    goal = data["goal"]
-
-    prompt = f"""
-You are an action agent.
-
-Goal: {goal}
-
-Return JSON ONLY:
-{{
- "action": "eat|sleep|play|seek_attention|do_nothing",
- "message": "...",
- "tool_calls": []
-}}
-"""
-
-    try:
-        parsed = json.loads(llm.invoke(prompt))
-
-        data["action"] = parsed.get("action")
-        data["message"] = parsed.get("message")
-        data["tool_calls"] = parsed.get("tool_calls", [])
-
-    except:
-        data["tool_calls"] = []
-
-    return data
-
-
-# =========================================================
-# REFLECTION AGENT (CAN WRITE MEMORY)
-# =========================================================
-def reflection_agent(data):
-    msg = data.get("message", "")
-
-    prompt = f"""
-Reflect on:
-
-{msg}
-
-Return JSON ONLY:
-{{
- "reflection": "...",
- "tool_calls": []
-}}
-"""
-
-    try:
-        parsed = json.loads(llm.invoke(prompt))
-
-        data["reflection"] = parsed.get("reflection")
-        data["tool_calls"] = parsed.get("tool_calls", [])
-
-    except:
-        data["tool_calls"] = []
-
-    return data
-
-
-# =========================================================
-# ROUTING LOGIC
-# =========================================================
-def route_tools_or_next(next_node):
-    def route(data):
-        if data.get("tool_calls"):
-            return "tool_router"
-        return next_node
-    return route
+def tool_router(state):
+    return "tools" if state.get("tool_calls") else END
 
 
 # =========================================================
 # BUILD GRAPH
 # =========================================================
 def build_graph():
-
     g = StateGraph(dict)
 
-    # 🧠 single intelligent agent node
-    g.add_node("agent", agent)
+    g.add_node("emotion", emotion_agent)
+    g.add_node("rule", rule_agent)
+    g.add_node("memory", memory_agent)
+    g.add_node("planner", planner_agent)
+    g.add_node("resolver", resolve_goal)
 
-    # 🛠 tool execution node (AUTOMATIC)
+    g.add_node("execute", execute_agent)
     g.add_node("tools", tool_node)
 
-    g.set_entry_point("agent")
+    g.set_entry_point("emotion")
 
-    # 🔁 LangGraph handles tool routing automatically
-    g.add_conditional_edges(
-        "agent",
-        lambda x: "tools" if x.get("tool_calls") else END
-    )
+    g.add_edge("emotion", "rule")
+    g.add_edge("rule", "memory")
+    g.add_edge("memory", "planner")
+    g.add_edge("planner", "resolver")
+    g.add_edge("resolver", "execute")
 
-    g.add_edge("tools", "agent")
+    g.add_conditional_edges("execute", tool_router)
+    g.add_edge("tools", "execute")
 
     return g.compile()
 
 
 graph = build_graph()
 
-def run(state, memory):
-    return graph.invoke({
-        "messages": [
-            ("system", "You are a living pet agent.")
-        ],
-        "state": state,
-        "memory": memory
-    })
-
 
 # =========================================================
 # PUBLIC API
 # =========================================================
 def run_multi_agent_graph(state, memory):
-    return graph.invoke({
-        "messages": [
-            ("system", "You are a virtual pet."),
-            ("user", f"""
-State Summary:
-- hunger: {state.get('hunger')}
-- energy: {state.get('energy')}
-- bond: {state.get('bond')}
-- mood: {state.get('mood')}
-
-Memory summary:
-- events: {len(memory.get('events', []))}
-- personality: {memory.get('personality', {})}
-
-Decide next action.
-""")
-        ]
-    })
+    return graph.invoke(init_state(state, memory))
