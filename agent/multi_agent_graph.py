@@ -1,11 +1,20 @@
 from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
 from langchain_community.llms import Ollama
+from langgraph.prebuilt import create_react_agent
 from agent.tool_registry import TOOLS
 from config import MODEL
 from collections import defaultdict
 import json
 
-llm = Ollama(model=MODEL)
+
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    base_url="http://127.0.0.1:1234/v1",
+    api_key="lm-studio",  # anything works
+    model="local-model"
+)
 
 
 # =========================================================
@@ -41,74 +50,29 @@ def init_state(state, memory):
     }
 
 
+agent = create_react_agent(
+    llm,
+    tools=TOOLS
+)
+
+
 # =========================================================
 # TOOL ROUTER NODE
 # =========================================================
-def tool_router(data):
-    calls = data.get("tool_calls", [])
-    tools = data.get("tools", {})
-
-    results = []
-
-    for call in calls:
-        tool_name = call.get("tool")
-        args = call.get("args", {})
-
-        if tool_name in tools:
-            try:
-                result = tools[tool_name](data)
-                results.append({tool_name: result})
-            except Exception as e:
-                results.append({tool_name: {"error": str(e)}})
-
-    data["tool_results"] = results
-    data["tool_calls"] = []
-
-    return data
+tool_node = ToolNode(TOOLS)
 
 
 # =========================================================
 # EMOTION AGENT
 # =========================================================
-def emotion_agent(data):
-    state = data["state"]
+def emotion_node(state):
+    messages = state["messages"]
 
-    prompt = f"""
-You are an emotion agent.
+    response = llm.invoke(messages)
 
-TOOLS:
-- memory_read
-- time_tool
-
-Return JSON ONLY:
-
-{{
- "emotion": "happy|sad|lonely|calm|anxious|excited",
- "goal": "eat|sleep|play|seek_attention|rest",
- "confidence": 0.0-1.0,
- "tool_calls": [
-   {{"tool": "memory_read", "args": {{}}}}
- ]
-}}
-
-State:
-Hunger={state['hunger']}
-Energy={state['energy']}
-Bond={state['bond']}
-"""
-
-    try:
-        parsed = json.loads(llm.invoke(prompt))
-
-        data["emotion"] = parsed.get("emotion")
-        data["emotion_goal"] = parsed.get("goal")
-        data["emotion_conf"] = parsed.get("confidence", 0.5)
-        data["tool_calls"] = parsed.get("tool_calls", [])
-
-    except:
-        data["tool_calls"] = []
-
-    return data
+    return {
+        "messages": messages + [response]
+    }
 
 
 # =========================================================
@@ -299,55 +263,59 @@ def route_tools_or_next(next_node):
 # BUILD GRAPH
 # =========================================================
 def build_graph():
+
     g = StateGraph(dict)
 
-    g.add_node("emotion", emotion_agent)
-    g.add_node("rule", rule_agent)
-    g.add_node("memory", memory_agent)
-    g.add_node("resolve", resolve_goal)
-    g.add_node("planner", planner)
-    g.add_node("action", action_agent)
-    g.add_node("reflect", reflection_agent)
-    g.add_node("tool_router", tool_router)
+    # 🧠 single intelligent agent node
+    g.add_node("agent", agent)
 
-    g.set_entry_point("emotion")
+    # 🛠 tool execution node (AUTOMATIC)
+    g.add_node("tools", tool_node)
 
-    # emotion → maybe tools → rule
-    g.add_conditional_edges("emotion", route_tools_or_next("rule"))
-    g.add_edge("tool_router", "emotion")
+    g.set_entry_point("agent")
 
-    # rule → memory
-    g.add_edge("rule", "memory")
+    # 🔁 LangGraph handles tool routing automatically
+    g.add_conditional_edges(
+        "agent",
+        lambda x: "tools" if x.get("tool_calls") else END
+    )
 
-    # memory → maybe tools → resolve
-    g.add_conditional_edges("memory", route_tools_or_next("resolve"))
-    g.add_edge("tool_router", "memory")
-
-    # resolve → planner
-    g.add_edge("resolve", "planner")
-
-    # planner → action
-    g.add_edge("planner", "action")
-
-    # action → maybe tools → reflect
-    g.add_conditional_edges("action", route_tools_or_next("reflect"))
-    g.add_edge("tool_router", "action")
-
-    # reflect → maybe tools → END
-    g.add_conditional_edges("reflect", route_tools_or_next("end"))
-    g.add_edge("tool_router", "reflect")
-
-    g.add_edge("reflect", END)
+    g.add_edge("tools", "agent")
 
     return g.compile()
 
 
 graph = build_graph()
 
+def run(state, memory):
+    return graph.invoke({
+        "messages": [
+            ("system", "You are a living pet agent.")
+        ],
+        "state": state,
+        "memory": memory
+    })
+
 
 # =========================================================
 # PUBLIC API
 # =========================================================
 def run_multi_agent_graph(state, memory):
-    data = init_state(state, memory)
-    return graph.invoke(data)
+    return graph.invoke({
+        "messages": [
+            ("system", "You are a virtual pet."),
+            ("user", f"""
+State Summary:
+- hunger: {state.get('hunger')}
+- energy: {state.get('energy')}
+- bond: {state.get('bond')}
+- mood: {state.get('mood')}
+
+Memory summary:
+- events: {len(memory.get('events', []))}
+- personality: {memory.get('personality', {})}
+
+Decide next action.
+""")
+        ]
+    })

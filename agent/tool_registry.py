@@ -1,13 +1,3 @@
-from agent.tools import (
-    time_tool,
-    memory_read_tool,
-    memory_write_tool,
-    state_tool
-)
+from agent.tools import get_time, read_memory, update_state
 
-TOOLS = {
-    "time_tool": time_tool,
-    "memory_read": memory_read_tool,
-    "memory_write": memory_write_tool,
-    "state_tool": state_tool,
-}
+TOOLS = [get_time, read_memory, update_state]
