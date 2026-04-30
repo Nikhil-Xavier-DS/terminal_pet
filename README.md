@@ -174,6 +174,9 @@ The final goal is passed to a ReAct agent which:
 * decides actions
 * optionally uses tools
 * executes behavior
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
@@ -270,3 +273,4 @@ Built as an experimental system combining:
 * agent orchestration (LangGraph)
 * tool-using reasoning (ReAct)
 * behavioral simulation (pet system)
+> **emergent digital life through time, memory, and internal conflict**
