@@ -1,266 +1,129 @@
-# 🧬 Terminal Pet — Autonomous Multi-Agent Digital Creature
+# 🐾 Terminal Pet (LangGraph Multi-Agent System)
 
-A **persistent, evolving AI lifeform** powered by a **multi-agent cognition system using LangGraph**.
+A **living virtual pet system** built using **LangGraph + LangChain + local LLMs (LM Studio / Ollama compatible)**.
 
-This is not a chatbot.
-
-It is a **stateful digital organism** that:
-
-* lives across time ⏳
-* remembers experiences 💾
-* forms emotional bonds ❤️
-* makes decisions through **internal agent conflict** 🧠
+The pet is powered by a **multi-agent architecture** where different reasoning systems vote on behavior, and a ReAct executor performs actions using tools.
 
 ---
 
-# 🌌 Core Idea
+# 🧠 Architecture Overview
 
-Your pet is not controlled by a single brain.
+The system is designed as a **production-style agent graph**:
 
-Instead, it is driven by **multiple internal agents** that:
-
-* feel (emotion)
-* remember (memory)
-* survive (rules)
-* decide (goal resolution)
-
-These agents **disagree, vote, and resolve conflicts** to produce behavior.
-
----
-
-# 🧠 Intelligence Model
-
-## 🧬 Multi-Agent Cognition (LangGraph)
-
-The system is built as a **LangGraph state machine**, where each node represents an independent agent.
-
-```text
-            ┌──────────────┐
-            │ Emotion Agent│
-            └──────┬───────┘
-                   │
-            ┌──────▼───────┐
-            │ Rule Agent   │
-            └──────┬───────┘
-                   │
-            ┌──────▼───────┐
-            │ Memory Agent │
-            └──────┬───────┘
-                   │
-         ┌─────────▼─────────┐
-         │ Goal Resolution   │  ← ⚖️ weighted voting
-         └─────────┬─────────┘
-                   │
-            ┌──────▼───────┐
-            │ Planner      │
-            └──────┬───────┘
-                   │
-            ┌──────▼───────┐
-            │ Action Agent │
-            └──────┬───────┘
-                   │
-            ┌──────▼───────┐
-            │ Reflection   │
-            └──────────────┘
 ```
 
----
-
-# ⚖️ Decision Making (Key Innovation)
-
-Each agent proposes a goal:
-
-* Emotion Agent → “I feel lonely → seek attention”
-* Rule Agent → “Hunger high → eat”
-* Memory Agent → “User ignored me → seek attention”
-
-These are resolved using:
-
-### 🧠 Weighted Confidence Voting
-
-```text
-score = weight × confidence
-```
-
-Example:
-
-```text
-Emotion: seek_attention (0.7 × 1.2 = 0.84)
-Rule:    eat            (0.9 × 1.6 = 1.44)
-Memory:  seek_attention (0.6 × 1.0 = 0.60)
-
-→ Final Goal: eat
-```
-
-This creates:
-
-* internal conflict
-* non-deterministic behavior
-* emergent personality
-
----
-
-# ⏳ Offline Life Simulation
-
-The creature continues to exist when the app is closed.
-
-On restart, it simulates:
-
-* hunger increase
-* energy decay
-* emotional drift
-* internal thoughts
-
-```text
-⏳ While you were away...
-
-🐾 I felt hungry while waiting...
-🐾 I wondered if you would come back.
-```
-
----
-
-# ❤️ Relationship System
-
-Tracks long-term bond:
-
-* increases with interaction
-* decreases with neglect
-* influences tone, behavior, and decisions
-
----
-
-# 🧠 Memory System
-
-### Types of memory:
-
-* short-term events
-* emotional state
-* long-term summary
-
-### Features:
-
-* automatic compression
-* emotional drift
-* personality influence
-
----
-
-# 🧬 Personality Evolution
-
-Over time, your pet develops traits like:
-
-* clingy
-* anxious
-* loyal
-* affectionate
-
-Driven by:
-
-* neglect
-* attention
-* interaction patterns
-
----
-
-# 🧠 Reflection & Identity
-
-The system periodically:
-
-* reflects on its own actions
-* updates emotional history
-* generates life story
-
-```text
-📖 Mochi's Story:
-"I remember waiting for you... but also the times you cared for me."
-```
-
----
-
-# 🎮 Interaction
-
-Commands:
-
-```bash
-feed
-play
-sleep
-status
-```
-
-Example:
-
-```text
-🧑 You: You fed Mochi 🍖
-Mochi: That felt nice... I feel safer with you.
-```
-
----
-
-# 🧬 Persistent State
-
-Stored locally:
+Emotion Agent   ─┐
+Rule Agent      ─┼──► Planner ─► Resolver (Weighted Voting)
+Memory Agent    ─┤
+Planner Agent   ─┘
 
 ```
-data/state.json
-data/memory.json
+                    ↓
+            🎯 Final Goal
+
+                    ↓
+        🤖 ReAct Execution Agent
+                    ↓
+            🛠 ToolNode (tools)
 ```
 
-Includes:
-
-* hunger
-* energy
-* bond
-* last_seen
-* emotional memory
+````
 
 ---
 
-# 🎭 Terminal Animation
+# ⚙️ Key Features
 
-Your creature is visually represented using ASCII animation:
+## 🧠 Multi-Agent Reasoning
+- Emotion Agent → behavioral intuition
+- Rule Agent → deterministic survival logic
+- Memory Agent → past experience influence
+- Planner Agent → synthesis of all signals
 
-* mood-based expressions
-* idle movement
-* emotional feedback
+## ⚖️ Weighted Voting System
+Each agent contributes to final decision:
+
+- Rule Agent (highest priority)
+- Emotion Agent (adaptive behavior)
+- Memory Agent (experience-driven)
+- Planner Agent (LLM synthesis)
 
 ---
 
-# ⚙️ Tech Stack
-
-* 🧠 LangGraph (multi-agent orchestration)
-* 🔗 LangChain (LLM interface)
-* 🤖 Ollama (local LLM runtime)
-* 🐍 Python
+## 🤖 ReAct Execution Layer
+Final decisions are executed using a **ReAct agent**:
+- Can use tools dynamically
+- Executes actions step-by-step
+- Safe isolated execution layer
 
 ---
 
-# 🚀 Setup
+## 🛠 Tool System
+Supports LangChain tools such as:
+- memory_read
+- memory_write
+- state update tools
+- custom environment actions
+
+All tools are executed via `ToolNode`.
+
+---
+
+## 🧠 Memory System
+- Stores events and personality evolution
+- Trimmed automatically for context safety
+- Used by Memory Agent for decision-making
+
+---
+
+## 🧩 LangGraph Flow
+- Fully compiled graph
+- Deterministic execution pipeline
+- Safe tool routing loop
+
+---
+
+# 📦 Tech Stack
+
+- LangGraph
+- LangChain
+- ChatOpenAI (LM Studio / OpenAI-compatible local server)
+- Python 3.10+
+- Pydantic (for structured outputs – optional extension)
+
+---
+
+# 🚀 Getting Started
 
 ## 1. Install dependencies
 
 ```bash
-pip install -r requirements.txt
-```
+pip install langgraph langchain langchain-openai
+````
 
----
-
-## 2. Install Ollama
-
-👉 [https://ollama.ai](https://ollama.ai)
-
----
-
-## 3. Pull model
+If using LM Studio:
 
 ```bash
-ollama pull llama3.2:1b
+pip install openai
 ```
 
 ---
 
-## 4. Run
+## 2. Start local LLM (LM Studio)
+
+Run server:
+
+```
+http://127.0.0.1:1234/v1
+```
+
+Model example:
+
+* `local-model`
+* or any OpenAI-compatible model
+
+---
+
+## 3. Run the app
 
 ```bash
 python main.py
@@ -268,41 +131,146 @@ python main.py
 
 ---
 
-# 🧠 Why This Is Different
+# 🧠 How It Works
 
-Most “AI pets” are:
+## Step 1 — State Input
 
-* scripted
-* stateless
-* reactive
+Pet receives:
 
-This system is:
-
-> 🧬 a persistent, evolving, multi-agent organism
-
-It:
-
-* thinks internally
-* argues with itself
-* changes over time
-* remembers you
+* hunger
+* energy
+* mood
+* memory
 
 ---
 
-# 🚀 Future Directions
+## Step 2 — Multi-Agent Reasoning
 
-* 🧠 doubt + hesitation system
-* 🧩 multi-creature ecosystem
-* 🪞 deeper self-awareness
-* 📖 autobiographical storytelling
-* 💤 dreams and subconscious simulation
+Each agent proposes a goal:
+
+| Agent   | Output                |
+| ------- | --------------------- |
+| Emotion | instinctive goal      |
+| Rule    | survival-driven goal  |
+| Memory  | experience-based goal |
+| Planner | synthesized goal      |
 
 ---
 
-# 🧡 Final Note
+## Step 3 — Weighted Resolution
 
-This is not just a project.
+Final goal is computed using:
 
-It is an experiment in:
+```
+score = confidence × agent_weight
+```
 
+---
+
+## Step 4 — Execution (ReAct)
+
+The final goal is passed to a ReAct agent which:
+
+* decides actions
+* optionally uses tools
+* executes behavior
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# 🧪 Example Behavior
+
+```
+Emotion: play (0.6)
+Rule: eat (0.9)
+Memory: sleep (0.4)
+Planner: play (0.7)
+
+→ Final Goal: eat
+
+Action: search_food
+Message: "I'm hungry... finding food!"
+```
+
+---
+
+# 🛠 Project Structure
+
+```
+terminal_pet/
+│
+├── agent/
+│   ├── multi_agent_graph.py   # LangGraph system
+│   ├── tool_registry.py       # Tool definitions
+│
+├── engine/
+│   ├── state.py
+│   ├── mood.py
+│   ├── actions.py
+│
+├── memory/
+│   ├── memory.py
+│
+├── ui/
+│   ├── render.py
+│
+├── main.py
+```
+
+---
+
+# 🔥 Why This Architecture Works
+
+### ✔ Separation of concerns
+
+Each agent has a single responsibility
+
+### ✔ Stability
+
+No tool logic inside reasoning nodes
+
+### ✔ Scalability
+
+Easy to add:
+
+* new agents
+* new tools
+* new voting rules
+
+### ✔ Production-safe LangGraph design
+
+No circular state corruption or invalid updates
+
+---
+
+# 🚧 Future Upgrades
+
+Planned enhancements:
+
+* 🧬 Long-term vector memory (RAG)
+* 🤝 Agent debate system (multi-agent argumentation)
+* 🧠 Self-reflection loops
+* 🧾 Structured Pydantic outputs everywhere
+* 🌐 MCP (Model Context Protocol) integration
+* 🎭 Personality evolution engine
+
+---
+
+# 🐾 Philosophy
+
+This is not just a chatbot.
+
+It is a **stateful, evolving agent ecosystem** that behaves like a living digital creature.
+
+---
+
+# 🧑‍💻 Author Notes
+
+Built as an experimental system combining:
+
+* agent orchestration (LangGraph)
+* tool-using reasoning (ReAct)
+* behavioral simulation (pet system)
 > **emergent digital life through time, memory, and internal conflict**

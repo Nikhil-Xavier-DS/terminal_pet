@@ -1,300 +1,253 @@
-from collections import defaultdict
-import json, re
 from langgraph.graph import StateGraph, END
-from langchain_community.llms import Ollama
-from pydantic import ValidationError
+from langgraph.prebuilt import ToolNode, create_react_agent
+from langchain_openai import ChatOpenAI
+from agent.tool_registry import TOOLS
+from collections import defaultdict
+import json
+import re
 
-from config import MODEL
-from agent.schemas import EmotionOutput, MemoryOutput, ActionOutput, ReflectionOutput
+# =========================================================
+# LLM (LM STUDIO / OPENAI COMPATIBLE)
+# =========================================================
+llm = ChatOpenAI(
+    base_url="http://127.0.0.1:1234/v1",
+    api_key="lm-studio",
+    model="local-model",
+    temperature=0.7
+)
 
-llm = Ollama(model=MODEL)
+# =========================================================
+# SAFE JSON PARSER (CRITICAL FIX)
+# =========================================================
+def safe_json_parse(text: str):
+    if not text:
+        return {}
 
-AGENT_WEIGHTS = {
-    "emotion": 1.2,
-    "rule": 1.6,     # survival should dominate
-    "memory": 1.0
-}
+    text = str(text).strip()
+    text = re.sub(r"```json|```", "", text)
 
-# ---------------------------
+    try:
+        return json.loads(text)
+    except:
+        pass
+
+    try:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    except:
+        pass
+
+    return {}
+
+
+# =========================================================
+# REACT EXECUTOR (TOOLS ENABLED)
+# =========================================================
+react_agent = create_react_agent(llm, tools=TOOLS)
+tool_node = ToolNode(TOOLS)
+
+
+# =========================================================
 # INIT STATE
-# ---------------------------
+# =========================================================
 def init_state(state, memory):
     return {
         "state": state,
         "memory": memory,
 
-        # agent outputs
-        "emotion": None,
         "emotion_goal": None,
-        "rule_goal": None,
-        "memory_goal": None,
+        "emotion_conf": 0,
 
-        # resolved
+        "rule_goal": None,
+        "rule_conf": 0,
+
+        "memory_goal": None,
+        "memory_conf": 0,
+
+        "planner_goal": None,
+        "planner_conf": 0,
+
         "goal": None,
-        "plan": None,
-        "action": None,
-        "message": None,
-        "reflection": None,
+        "action_result": None,
+        "decision_debug": {}
     }
 
 
-# ---------------------------
-# 1. EMOTION AGENT
-# ---------------------------
+# =========================================================
+# 1. EMOTION AGENT (LLM + SAFE PARSE)
+# =========================================================
 def emotion_agent(data):
-    state = data["state"]
+    s = data["state"]
 
     prompt = f"""
-Emotion agent.
+Return ONLY JSON:
 
-Hunger: {state['hunger']}
-Energy: {state['energy']}
-Bond: {state['bond']}
+{{"goal":"eat|sleep|play|rest","confidence":0-1}}
 
-Return JSON:
-{{
- "emotion": "...",
- "goal": "eat|sleep|play|seek_attention|explore|rest",
- "confidence": 0.0-1.0
-}}
+State:
+hunger={s['hunger']}
+energy={s['energy']}
+bond={s['bond']}
+mood={s.get('mood')}
 """
 
-    try:
-        raw = llm.invoke(prompt)
+    raw = llm.invoke(prompt)
+    res = safe_json_parse(raw.content if hasattr(raw, "content") else str(raw))
 
-        # 🔥 force validation
-        result = EmotionOutput.model_validate_json(raw)
-
-        data["emotion"] = result.emotion
-        data["emotion_goal"] = result.goal
-        data["emotion_conf"] = result.confidence
-
-    except ValidationError:
-        data["emotion"] = "calm"
-        data["emotion_goal"] = "rest"
-        data["emotion_conf"] = 0.5
-
+    data["emotion_goal"] = res.get("goal", "rest")
+    data["emotion_conf"] = float(res.get("confidence", 0.5))
     return data
 
 
-# ---------------------------
-# 2. RULE AGENT (NO LLM)
-# ---------------------------
+# =========================================================
+# 2. RULE AGENT (DETERMINISTIC)
+# =========================================================
 def rule_agent(data):
-    state = data["state"]
+    s = data["state"]
 
-    if state["hunger"] > 8:
-        data["rule_goal"] = "eat"
-        data["rule_conf"] = 0.9
-    elif state["energy"] < 2:
-        data["rule_goal"] = "sleep"
-        data["rule_conf"] = 0.85
+    if s["hunger"] > 8:
+        g, c = "eat", 0.95
+    elif s["energy"] < 2:
+        g, c = "sleep", 0.9
     else:
-        data["rule_goal"] = "play"
-        data["rule_conf"] = 0.6
+        g, c = "play", 0.6
 
+    data["rule_goal"] = g
+    data["rule_conf"] = c
     return data
 
 
-# ---------------------------
-# 3. MEMORY AGENT
-# ---------------------------
+# =========================================================
+# 3. MEMORY AGENT (SAFE + LIGHTWEIGHT)
+# =========================================================
 def memory_agent(data):
-    memory = data["memory"]
-    recent = memory.get("events", [])[-5:]
+    recent = data["memory"].get("events", [])[-5:]
 
     prompt = f"""
-Memory agent.
-
-Recent events:
+Memory:
 {recent}
 
-Return JSON:
-{{
- "goal": "eat|sleep|play|seek_attention|explore|rest",
- "confidence": 0.0-1.0
-}}
+Return ONLY JSON:
+{{"goal":"eat|sleep|play|rest","confidence":0-1}}
 """
 
-    try:
-        raw = llm.invoke(prompt)
-        result = MemoryOutput.model_validate_json(raw)
+    raw = llm.invoke(prompt)
+    res = safe_json_parse(raw.content if hasattr(raw, "content") else str(raw))
 
-        data["memory_goal"] = result.goal
-        data["memory_conf"] = result.confidence
-
-    except ValidationError:
-        data["memory_goal"] = "rest"
-        data["memory_conf"] = 0.5
-
+    data["memory_goal"] = res.get("goal", "rest")
+    data["memory_conf"] = float(res.get("confidence", 0.5))
     return data
 
 
-# ---------------------------
-# 4. GOAL RESOLUTION (VOTING)
-# ---------------------------
-def normalize_goal(goal):
-    # handle list
-    if isinstance(goal, list):
-        return goal[0] if goal else None
+# =========================================================
+# 4. PLANNER AGENT
+# =========================================================
+def planner_agent(data):
+    prompt = f"""
+Combine:
 
-    # handle None
-    if goal is None:
-        return None
+Emotion: {data['emotion_goal']}
+Rule: {data['rule_goal']}
+Memory: {data['memory_goal']}
 
-    # convert to string
-    if not isinstance(goal, str):
-        goal = str(goal)
+Return ONLY JSON:
+{{"goal":"eat|sleep|play|rest","confidence":0-1}}
+"""
 
-    return goal.strip().lower()
+    raw = llm.invoke(prompt)
+    res = safe_json_parse(raw.content if hasattr(raw, "content") else str(raw))
+
+    data["planner_goal"] = res.get("goal", "rest")
+    data["planner_conf"] = float(res.get("confidence", 0.5))
+    return data
+
+
+# =========================================================
+# 5. WEIGHTED RESOLVER
+# =========================================================
+WEIGHTS = {
+    "emotion": 1.2,
+    "rule": 1.6,
+    "memory": 1.0,
+    "planner": 1.3
+}
 
 def resolve_goal(data):
     scores = defaultdict(float)
-
-    # collect votes
-    agents = [
-        ("emotion", data.get("emotion_goal"), data.get("emotion_conf", 0)),
-        ("rule", data.get("rule_goal"), data.get("rule_conf", 0)),
-        ("memory", data.get("memory_goal"), data.get("memory_conf", 0)),
-    ]
-
     debug = []
 
-    for name, goal, conf in agents:
-        goal = normalize_goal(goal)
+    agents = [
+        ("emotion", data["emotion_goal"], data["emotion_conf"]),
+        ("rule", data["rule_goal"], data["rule_conf"]),
+        ("memory", data["memory_goal"], data["memory_conf"]),
+        ("planner", data["planner_goal"], data["planner_conf"]),
+    ]
 
+    for name, goal, conf in agents:
         if not goal:
             continue
 
-        weight = AGENT_WEIGHTS.get(name, 1.0)
-        score = weight * conf
-
+        score = WEIGHTS[name] * float(conf)
         scores[goal] += score
+        debug.append(f"{name}: {goal} → {score:.2f}")
 
-        debug.append(f"{name}: {goal} (conf={conf:.2f}, weight={weight}) → {score:.2f}")
-
-    if not scores:
-        data["goal"] = "do_nothing"
-        return data
-
-    # pick highest score
-    best_goal = max(scores, key=scores.get)
-
-    data["goal"] = best_goal
-
-    # 🔥 OPTIONAL: introspection (VERY COOL)
-    data["decision_debug"] = {
-        "scores": dict(scores),
-        "details": debug
-    }
-
+    data["goal"] = max(scores, key=scores.get) if scores else "rest"
+    data["decision_debug"] = {"details": debug}
     return data
 
 
-# ---------------------------
-# 5. PLANNER
-# ---------------------------
-def planner(data):
+# =========================================================
+# 6. EXECUTION AGENT (REACT + TOOLS)
+# =========================================================
+def execute_agent(data):
     goal = data["goal"]
 
-    plans = {
-        "eat": "find food → eat",
-        "sleep": "rest safely",
-        "play": "engage user",
-        "seek_attention": "express emotion",
-        "explore": "wander",
-        "rest": "idle"
-    }
+    result = react_agent.invoke({
+        "messages": [
+            ("system", "You are the execution engine of a virtual pet. Use tools if needed."),
+            ("user", f"Execute goal: {goal}")
+        ],
+        "state": data["state"],
+        "memory": data["memory"]
+    })
 
-    data["plan"] = plans.get(goal, "idle")
+    data["action_result"] = result["messages"][-1].content
     return data
 
 
-# ---------------------------
-# 6. ACTION AGENT
-# ---------------------------
-def action_agent(data):
-    goal = data["goal"]
-    emotion = data["emotion"]
-
-    prompt = f"""
-Action agent.
-
-Goal: {goal}
-Emotion: {emotion}
-
-Return JSON:
-{{
- "action": "eat|sleep|play|seek_attention|do_nothing",
- "message": "..."
-}}
-"""
-    try:
-        raw = llm.invoke(prompt)
-        result = ActionOutput.model_validate_json(raw)
-
-        data["action"] = result.action
-        data["message"] = result.message
-
-    except ValidationError:
-        data["action"] = "do_nothing"
-        data["message"] = "..."
-
-    return data
+# =========================================================
+# TOOL ROUTER
+# =========================================================
+def tool_router(state):
+    return "tools" if state.get("tool_calls") else END
 
 
-# ---------------------------
-# 7. REFLECTION AGENT
-# ---------------------------
-def reflection_agent(data):
-    msg = data["message"]
-
-    prompt = f"""
-Reflect:
-
-"{msg}"
-
-Return one sentence.
-"""
-    try:
-        raw = llm.invoke(prompt)
-        result = ReflectionOutput.model_validate_strings(raw)
-
-        data["reflection"] = result.strip()
-    
-    except ValidationError:
-        data["reflection"] = "..."
-
-    return data
-
-
-# ---------------------------
+# =========================================================
 # BUILD GRAPH
-# ---------------------------
+# =========================================================
 def build_graph():
     g = StateGraph(dict)
 
     g.add_node("emotion", emotion_agent)
     g.add_node("rule", rule_agent)
     g.add_node("memory", memory_agent)
+    g.add_node("planner", planner_agent)
+    g.add_node("resolver", resolve_goal)
 
-    g.add_node("resolve", resolve_goal)
-    g.add_node("plan", planner)
-    g.add_node("action", action_agent)
-    g.add_node("reflect", reflection_agent)
+    g.add_node("execute", execute_agent)
+    g.add_node("tools", tool_node)
 
     g.set_entry_point("emotion")
 
-    # parallel-ish branches (sequential execution but independent logic)
     g.add_edge("emotion", "rule")
     g.add_edge("rule", "memory")
-    g.add_edge("memory", "resolve")
+    g.add_edge("memory", "planner")
+    g.add_edge("planner", "resolver")
+    g.add_edge("resolver", "execute")
 
-    g.add_edge("resolve", "plan")
-    g.add_edge("plan", "action")
-    g.add_edge("action", "reflect")
-
-    g.add_edge("reflect", END)
+    g.add_conditional_edges("execute", tool_router)
+    g.add_edge("tools", "execute")
 
     return g.compile()
 
@@ -302,17 +255,8 @@ def build_graph():
 graph = build_graph()
 
 
-# ---------------------------
+# =========================================================
 # PUBLIC API
-# ---------------------------
+# =========================================================
 def run_multi_agent_graph(state, memory):
-    data = init_state(state, memory)
-    result = graph.invoke(data)
-
-    return {
-        "emotion": result.get("emotion"),
-        "goal": result.get("goal"),
-        "action": result.get("action"),
-        "message": result.get("message"),
-        "reflection": result.get("reflection"),
-    }
+    return graph.invoke(init_state(state, memory))
