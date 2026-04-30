@@ -25,10 +25,7 @@ Planner Agent   ─┘
         🤖 ReAct Execution Agent
                     ↓
             🛠 ToolNode (tools)
-```
-
-````
-
+            
 ---
 
 # ⚙️ Key Features
